@@ -6,7 +6,7 @@
   "scripts": {
     "vercel-build": "npm run build && mkdir -p ./vercel/output && cp -r dist/* ./vercel/output",
     "build": "rimraf dist && tsc",
-    "start": "node index.ts",
+    "start": "node index.js",
     "dev": "nodemon --exec vite-node ./index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
