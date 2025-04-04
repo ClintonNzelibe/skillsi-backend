@@ -11,6 +11,18 @@ import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import swagger from "./swagger.json";
 
+// Set up Swagger UI with specific options
+const options = {
+  swaggerOptions: {
+    docExpansion: "list",
+    deepLinking: true,
+    displayRequestDuration: true,
+  },
+  customCss: ".swagger-ui .topbar { display: none }",
+  customSiteTitle: "Skillsi API Documentation",
+  swaggerVersion: "4.18.3", // Try specifying a version
+};
+
 const app = express();
 dotenv.config();
 
@@ -105,7 +117,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Serve Swagger UI at /api-docs
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swagger));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swagger, options));
 
 // Apply DB middleware only to routes that need database access
 app.use("/api/v1", dbMiddleware);
