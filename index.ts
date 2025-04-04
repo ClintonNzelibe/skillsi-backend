@@ -134,8 +134,8 @@ app.use("/api/v1/auth", authRouter);
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 
+const port = process.env.PORT || 5500;
 if (process.env.NODE_ENV !== "production") {
-  const port = process.env.PORT || 5500;
 
   // Connect to database first, then start server
   connectToDatabase(connectionString)
