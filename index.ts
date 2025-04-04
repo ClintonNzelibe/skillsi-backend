@@ -135,7 +135,7 @@ app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 
 const port = process.env.PORT || 5500;
-if (process.env.NODE_ENV !== "production") {
+// if (process.env.NODE_ENV !== "production") {
 
   // Connect to database first, then start server
   connectToDatabase(connectionString)
@@ -151,6 +151,6 @@ if (process.env.NODE_ENV !== "production") {
   // app.listen(port, () => {
   //   console.log(`Server is listening on port ${port}...`);
   // });
-}
+// }
 
 export default app;
