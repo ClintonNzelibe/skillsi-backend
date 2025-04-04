@@ -1,0 +1,89 @@
+import mongoose, { Schema, Document } from "mongoose";
+import validator from "validator";
+import bcrypt from "bcryptjs";
+
+interface IUser extends Document {
+  fullName: string;
+  email: string;
+  password: string;
+  lastLoggedIn?: Date;
+  loggedInTimes?: number;
+
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+const UserSchema: Schema<IUser> = new Schema(
+  {
+    fullName: {
+      type: String,
+      trim: true,
+      default: "",
+      required: [true, "Please provide full name"],
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: [true, "Please provide email address"],
+      validate: {
+        validator: (str: string) => validator.isEmail(str),
+        message: "Please provide valid email",
+      },
+      trim: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      minlength: 12,
+    },
+    // passwordChanged: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // resetToken: {
+    //   type: String,
+    // },
+    // isResetTokenVerified: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // resetTokenExpirationDate: {
+    //   type: Date,
+    // },
+    // department: {
+    //   type: String,
+    // },
+    // isProfileComplete: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // numberOfEdits: {
+    //   type: Number,
+    //   default: 0,
+    // },
+    lastLoggedIn: {
+      type: Date,
+    },
+    loggedInTimes: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
+
+UserSchema.pre<IUser>("save", async function () {
+  // console.log(this.modifiedPaths());
+  // console.log(this.isModified('name'));
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password!, salt);
+});
+
+UserSchema.methods.comparePassword = async function (
+  canditatePassword: string
+) {
+  const isMatch = await bcrypt.compare(canditatePassword, this.password!);
+  return isMatch;
+};
+
+export default mongoose.model<IUser>("User", UserSchema);
