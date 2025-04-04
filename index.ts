@@ -9,7 +9,7 @@ import notFoundMiddleware from "./middleware/not-found.js";
 import errorHandlerMiddleware from "./middleware/error-handler.js";
 import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
-import swagger from "./swagger.json";
+import swagger from "./swagger.json" with { type: 'json' };
 
 // Set up Swagger UI with specific options
 const options = {
