@@ -7,10 +7,10 @@ import { TokenUser } from "../type.js";
 
 const register = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { fullName, email, password, authProvider } = req.body;
+    const { fullName, email, password, authProvider, deviceId } = req.body;
 
     // Validate input
-    if (!fullName || !email || !authProvider) {
+    if (!fullName || !email || !authProvider || !deviceId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json({ message: "All fields are required." });
@@ -39,6 +39,7 @@ const register = async (req: Request, res: Response): Promise<any> => {
       fullName,
       email,
       password,
+      currentDeviceId: deviceId,
     });
 
     res
@@ -54,12 +55,12 @@ const register = async (req: Request, res: Response): Promise<any> => {
 
 const login = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { email, password, authProvider } = req.body;
+    const { email, password, authProvider, deviceId } = req.body;
 
-    if (!email || !authProvider) {
+    if (!email || !authProvider || !deviceId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ msg: "Email and authProvider are required." });
+        .json({ message: "Email and authProvider are required." });
     }
 
     // Find user by email
@@ -67,7 +68,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
     if (!user) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
-        .json({ msg: "Invalid Credentials" });
+        .json({ message: "Invalid Credentials" });
     }
 
     // Handle manual authentication
@@ -75,7 +76,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
       if (!password) {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
-          msg: "Password is required for manual login.",
+          message: "Password is required for manual login.",
         });
       }
 
@@ -84,20 +85,50 @@ const login = async (req: Request, res: Response): Promise<any> => {
       if (!isPasswordCorrect) {
         return res
           .status(StatusCodes.UNAUTHORIZED)
-          .json({ success: false, msg: "Invalid Credentials" });
+          .json({ success: false, message: "Invalid Credentials" });
       }
 
-      const loggedInTimes = user.loggedInTimes || 0;
+      // Restrict login if user is already logged in from a different device
+      if (user.isLoggedIn && user.currentDeviceId !== deviceId) {
+        return res.status(StatusCodes.FORBIDDEN).json({
+          success: false,
+          message:
+            "You are already logged in on another device. Please logout first.",
+        });
+      }
 
-      user.loggedInTimes = loggedInTimes + 1;
+      // If logging in from a new device
+      const isNewDevice = user.currentDeviceId !== deviceId;
+
+      // Update user session
+      user.currentDeviceId = deviceId;
+      user.isLoggedIn = true;
+
+      // Add to registeredDeviceIds if not already present
+      if (!user.registeredDeviceIds?.includes(deviceId)) {
+        user.registeredDeviceIds?.push(deviceId);
+      }
+
+      user.loggedInTimes = (user.loggedInTimes || 0) + 1;
       user.lastLoggedIn = new Date();
+
       await user.save();
+
+      // Allow login only if deviceId matches or first-time login
+      if (isNewDevice) {
+        // New device detected
+        // await sendEmail({
+        //   to: user.email,
+        //   subject: "New Device Login Detected",
+        //   text: `We noticed a login to your account from a new device. If this wasn't you, please reset your password.`,
+        // });
+      }
 
       // Ensure required fields are not undefined
       if (!user._id || !user.email || user.fullName == null) {
         return res
           .status(StatusCodes.BAD_REQUEST)
-          .json({ success: false, msg: "Incomplete admin data" });
+          .json({ success: false, message: "Incomplete admin data" });
       }
 
       const tokenCompany: TokenUser = createTokenUser({
@@ -110,20 +141,51 @@ const login = async (req: Request, res: Response): Promise<any> => {
 
       return res.status(StatusCodes.OK).json({
         success: true,
-        msg: "Login successfully!",
+        message: "Login successfully!",
         token,
       });
     }
 
-    res
-      .status(StatusCodes.OK)
-      .json({ success: true, message: "Login successfully" });
+    res.status(StatusCodes.BAD_REQUEST).json({
+      success: false,
+      message: "Unsupported auth provider",
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error logging in", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error" });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
-export { register, login };
+const logout = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const email = req.user?.email;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.isLoggedIn = false;
+    user.currentDeviceId = undefined;
+
+    await user.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Error logging out", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export { register, login, logout };

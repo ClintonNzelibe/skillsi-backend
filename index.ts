@@ -32,6 +32,9 @@ import apiKeyMiddleware from "./middleware/api-key.js";
 
 // routers
 import authRouter from "./routes/authRoutes.js";
+import courseRouter from "./routes/courseRoutes.js";
+import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
+
 const connectionString = process.env.MONGO_URL || "";
 
 // Middleware setup
@@ -126,6 +129,8 @@ app.use("/api/v1", apiKeyMiddleware);
 // Add your API routes here
 // app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/course", courseRouter);
+app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 // app.use("/api/v1/admin", adminRouter);
 // app.use("/api/v1/user", userRouter);
 // app.use("/api/v1/training", awarenessTrainingRouter);

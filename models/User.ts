@@ -6,6 +6,9 @@ interface IUser extends Document {
   fullName: string;
   email: string;
   password: string;
+  registeredDeviceIds?: [string];
+  currentDeviceId?: string;
+  isLoggedIn?: boolean;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
 
@@ -34,6 +37,19 @@ const UserSchema: Schema<IUser> = new Schema(
     password: {
       type: String,
       minlength: 12,
+    },
+    registeredDeviceIds: {
+      type: [String],
+      default: [],
+    },
+    currentDeviceId: {
+      type: String,
+      default: "",
+      required: [true, "Please provide current device id"],
+    },
+    isLoggedIn: {
+      type: Boolean,
+      default: false,
     },
     // passwordChanged: {
     //   type: Boolean,
