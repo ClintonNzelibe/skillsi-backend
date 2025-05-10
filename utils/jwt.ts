@@ -4,6 +4,8 @@ import {
   JwtPayload,
   TokenAdminPayload,
   TokenPayload,
+  TokenTutorPayload,
+  TutorJwtPayload,
 } from "../type.js";
 
 interface Token {
@@ -17,6 +19,24 @@ interface ResponseUser {
 
 const createUserJWT = ({ userId, email, fullName }: JwtPayload): string => {
   const payload: TokenPayload = { userId, email, fullName };
+  const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
+    expiresIn: process.env.JWT_LIFETIME as any,
+  });
+  return token;
+};
+
+const createTutorJWT = ({
+  tutorId,
+  email,
+  fName,
+  lName,
+}: TutorJwtPayload): string => {
+  const payload: TokenTutorPayload = {
+    tutorId,
+    email,
+    fName,
+    lName,
+  };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
     expiresIn: process.env.JWT_LIFETIME as any,
   });
@@ -64,4 +84,10 @@ const attachCookiesToResponse = ({ res, user }: ResponseUser): string => {
   return token;
 };
 
-export { createUserJWT, createAdminJWT, isTokenValid, attachCookiesToResponse };
+export {
+  createUserJWT,
+  createTutorJWT,
+  createAdminJWT,
+  isTokenValid,
+  attachCookiesToResponse,
+};

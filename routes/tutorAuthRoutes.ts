@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import { authenticateUser } from "../middleware/authentication.js";
+import { authenticateTutor } from "../middleware/authentication.js";
 
 import rateLimiter from "express-rate-limit";
 
@@ -13,10 +13,10 @@ const apiLimiter = rateLimiter({
   message: "Too many requests from this IP, please try again after 15 minutes",
 });
 
-import { register, login, logout } from "../controllers/authController.js";
+import { signupTutor, signinTutor, } from "../controllers/tutorAuthController.js";
 
-router.route("/register").post(register);
-router.route("/login").post(apiLimiter, login);
-router.route("/logout").post(authenticateUser, logout);
+router.route("/signupTutor").post(signupTutor);
+router.route("/signinTutor").post(apiLimiter, signinTutor);
+// router.route("/logout").post(authenticateUser, logout);
 
 export default router;

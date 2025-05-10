@@ -97,9 +97,6 @@ const login = async (req: Request, res: Response): Promise<any> => {
         });
       }
 
-      // If logging in from a new device
-      const isNewDevice = user.currentDeviceId !== deviceId;
-
       // Update user session
       user.currentDeviceId = deviceId;
       user.isLoggedIn = true;
@@ -114,16 +111,6 @@ const login = async (req: Request, res: Response): Promise<any> => {
 
       await user.save();
 
-      // Allow login only if deviceId matches or first-time login
-      if (isNewDevice) {
-        // New device detected
-        // await sendEmail({
-        //   to: user.email,
-        //   subject: "New Device Login Detected",
-        //   text: `We noticed a login to your account from a new device. If this wasn't you, please reset your password.`,
-        // });
-      }
-
       // Ensure required fields are not undefined
       if (!user._id || !user.email || user.fullName == null) {
         return res
@@ -131,13 +118,13 @@ const login = async (req: Request, res: Response): Promise<any> => {
           .json({ success: false, message: "Incomplete admin data" });
       }
 
-      const tokenCompany: TokenUser = createTokenUser({
+      const tokenUser: TokenUser = createTokenUser({
         userId: user?._id?.toString() || "",
         email: user?.email || "",
         fullName: user?.fullName || "",
       });
 
-      const token = createUserJWT(tokenCompany);
+      const token = createUserJWT(tokenUser);
 
       return res.status(StatusCodes.OK).json({
         success: true,

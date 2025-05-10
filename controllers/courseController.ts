@@ -78,7 +78,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       priceInNaira,
       priceInDollar,
       priceInPounds,
-      tutor: req.admin?.adminId,
+      tutor: req.tutor?.tutorId,
       bannerImage: bannerUrl,
       thumbnail: thumbnailUrl,
       promoVideoUrl: promoVideoFinalUrl,
@@ -153,10 +153,31 @@ const fetchAllCoursesUser = async (
   res: Response
 ): Promise<any> => {
   try {
-    const courses = await Course.find({}).populate(
-      "tutor",
-      "fName lName email profileImage totalStudent totalReviews totalCourses"
-    );
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+
+    let filter: any = { $and: [] };
+
+    if (search) {
+      filter.$and.push({
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    if (filter.$and.length === 0) delete filter.$and;
+
+    const courses = await Course.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .populate(
+        "tutor",
+        "fName lName email profileImage totalStudent totalReviews totalCourses"
+      );
     if (!courses || courses.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -165,9 +186,20 @@ const fetchAllCoursesUser = async (
       });
     }
 
+    const totalCoursesCount = await Course.countDocuments(filter);
+    const totalPages = Math.ceil(totalCoursesCount / limit);
+
     res
       .status(StatusCodes.OK)
-      .json({ success: true, message: "Fetched successfully", courses });
+      .json({
+        success: true,
+        message: "Fetched successfully",
+        courses,
+        page,
+        totalCoursePerPage: courses.length,
+        totalPages,
+        totalCourses: totalCoursesCount,
+      });
   } catch (error) {
     console.error("Error fetching courses", error);
     res

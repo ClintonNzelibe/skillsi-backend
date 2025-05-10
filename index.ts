@@ -31,7 +31,9 @@ import connectToDatabase from "./db/connect.js";
 import apiKeyMiddleware from "./middleware/api-key.js";
 
 // routers
-import authRouter from "./routes/authRoutes.js";
+import userAuthRouter from "./routes/userAuthRoutes.js";
+import tutorAuthRouter from "./routes/tutorAuthRoutes.js";
+import tutorRouter from "./routes/tutorRoutes.js";
 import courseRouter from "./routes/courseRoutes.js";
 import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
 
@@ -127,8 +129,9 @@ app.use("/api/v1", dbMiddleware);
 app.use("/api/v1", apiKeyMiddleware);
 
 // Add your API routes here
-// app.use("/api/v1/company", companyRouter);
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/userAuth", userAuthRouter);
+app.use("/api/v1/tutorAuth", tutorAuthRouter);
+app.use("/api/v1/tutor", tutorRouter);
 app.use("/api/v1/course", courseRouter);
 app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 // app.use("/api/v1/admin", adminRouter);

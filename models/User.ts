@@ -36,6 +36,14 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     password: {
       type: String,
+      required: [true, "Please provide password"],
+      validate: {
+        validator: (str: string) => validator.isStrongPassword(str),
+        message:
+          "Password must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.",
+      },
+      trim: true,
+      select: false,
       minlength: 12,
     },
     registeredDeviceIds: {

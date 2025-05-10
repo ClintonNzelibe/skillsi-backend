@@ -64,3 +64,32 @@ export interface AdminJwtPayload {
   role: string;
   // Add any other properties that you expect in the payload
 }
+
+// Tutor types
+export interface Tutor {
+  tutorId: string;
+  email: string;
+  fName?: string;
+  lName?: string;
+}
+
+export interface TokenTutor {
+  tutorId: string;
+  email: string;
+  fName?: string;
+  lName?: string;
+}
+
+export interface TokenTutorPayload {
+  tutorId: string;
+  email: string;
+  fName?: string;
+  lName?: string;
+}
+
+export interface TutorJwtPayload {
+  tutorId: string;
+  email: string;
+  fName?: string;
+  lName?: string;
+}

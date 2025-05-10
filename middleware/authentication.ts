@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { UnAuthenticatedError, UnauthorizedError } from "../errors/index.js";
 import { isTokenValid } from "../utils/index.js";
+import { TokenTutorPayload } from "../type.js";
 
 // Define the base token payload interface
 interface BaseTokenPayload {
@@ -31,6 +32,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserTokenPayload;
+      tutor?: TokenTutorPayload;
       admin?: AdminTokenPayload;
     }
   }
@@ -78,6 +80,53 @@ const authenticateUser = async (
       fullName,
       email,
       userId,
+    };
+    next();
+  } catch (error) {
+    throw new UnAuthenticatedError("Authentication Invalid");
+  }
+};
+
+const authenticateTutor = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    throw new UnAuthenticatedError("Authentication invalid");
+  }
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    throw new UnAuthenticatedError("Authentication invalid");
+  }
+
+  try {
+    const result = isTokenValid({ token });
+
+    // Type guard function to check if payload is AdminTokenPayload
+    const isTutorPayload = (payload: any): payload is TokenTutorPayload => {
+      return (
+        payload !== null &&
+        typeof payload === "object" &&
+        "tutorId" in payload &&
+        "email" in payload &&
+        "fName" in payload &&
+        "lName" in payload
+      );
+    };
+
+    if (!result || typeof result === "boolean" || !isTutorPayload(result)) {
+      throw new UnAuthenticatedError("Authentication invalid");
+    }
+
+    const { tutorId, email, fName, lName } = result;
+    req.tutor = {
+      tutorId,
+      email,
+      fName,
+      lName,
     };
     next();
   } catch (error) {
@@ -158,4 +207,9 @@ const authorizePermissions = (...roles: string[]) => {
   };
 };
 
-export { authenticateUser, authenticateAdmin, authorizePermissions };
+export {
+  authenticateUser,
+  authenticateTutor,
+  authenticateAdmin,
+  authorizePermissions,
+};

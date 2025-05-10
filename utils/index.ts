@@ -1,5 +1,6 @@
 import {
   createUserJWT,
+  createTutorJWT,
   createAdminJWT,
   isTokenValid,
   attachCookiesToResponse,
@@ -11,6 +12,7 @@ import {
   STRIPE_WEBHOOK_SECRET,
 } from "./keys.js";
 import createTokenUser from "./createTokenUser.js";
+import createTokenTutor from "./createTokenTutor.js";
 import createTokenAdmin from "./createTokenAdmin.js";
 import checkPermissions from "./checkPermissions.js";
 import sendVerificationEmail from "./sendVerificationEmail.js";
@@ -22,6 +24,7 @@ import createHash from "./createHash.js";
 
 export {
   createUserJWT,
+  createTutorJWT,
   createAdminJWT,
   isTokenValid,
   attachCookiesToResponse,
@@ -30,6 +33,7 @@ export {
   STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET,
   createTokenUser,
+  createTokenTutor,
   createTokenAdmin,
   checkPermissions,
   sendVerificationEmail,
