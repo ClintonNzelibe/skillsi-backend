@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import Tutor from "../models/Tutor";
+import Tutor from "../models/Tutor.js";
 import {
   DeleteFileFromCloudinary,
   UploadFileToCloudinary,
