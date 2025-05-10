@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Tutor from "../models/Tutor";
+import Tutor from "../models/Tutor.js";
 import { StatusCodes } from "http-status-codes";
 import { createTokenTutor, createTutorJWT } from "../utils/index.js";
 import { TokenTutor } from "../type.js";

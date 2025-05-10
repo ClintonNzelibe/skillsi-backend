@@ -3,7 +3,6 @@ import { StatusCodes } from "http-status-codes";
 import PurchasedCourse from "../models/PurchasedCourse.js";
 import CourseModule from "../models/CourseModule.js";
 import CourseLesson from "../models/CourseLesson.js";
-import { Types } from "mongoose";
 
 const fetchPaidCoursesUser = async (
   req: Request,
