@@ -106,6 +106,9 @@ UserSchema.pre<IUser>("save", async function () {
 UserSchema.methods.comparePassword = async function (
   canditatePassword: string
 ) {
+  if (!this.password) {
+    return false;
+  }
   const isMatch = await bcrypt.compare(canditatePassword, this.password!);
   return isMatch;
 };

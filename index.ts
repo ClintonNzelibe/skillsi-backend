@@ -142,7 +142,7 @@ app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
 
-const port = process.env.PORT || 5500;
+const port = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "production") {
 
   // Connect to database first, then start server

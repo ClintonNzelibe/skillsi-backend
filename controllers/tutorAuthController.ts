@@ -47,7 +47,7 @@ const signinTutor = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
 
-    const tutor = await Tutor.findOne({ email });
+    const tutor = await Tutor.findOne({ email }).select("+password");
     if (!tutor) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,

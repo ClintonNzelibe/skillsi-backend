@@ -64,7 +64,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
     }
 
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
@@ -79,9 +79,16 @@ const login = async (req: Request, res: Response): Promise<any> => {
           message: "Password is required for manual login.",
         });
       }
+      
+      // Check if password exists on the user object
+      if (!user.password) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: "No password set for this account.",
+        });
+      }
 
       const isPasswordCorrect = await user.comparePassword(password);
-
       if (!isPasswordCorrect) {
         return res
           .status(StatusCodes.UNAUTHORIZED)
