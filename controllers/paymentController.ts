@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import PaymentMethod from "../models/PaymentMethod.js";
 import Course from "../models/Course.js";
 import PurchasedCourse from "../models/PurchasedCourse.js";
-import PaymentHistory from "../models/PaymentHistory";
+import PaymentHistory from "../models/PaymentHistory.js";
 import axios from "axios";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";

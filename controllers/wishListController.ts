@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import WishList from "../models/WishList";
+import WishList from "../models/WishList.js";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 
