@@ -8,7 +8,7 @@ import {
   currentTutor,
 } from "../controllers/tutorController.js";
 
-router.route("/updateTutorProfile").post(authenticateTutor, updateTutorProfile);
+router.route("/updateTutorProfile").patch(authenticateTutor, updateTutorProfile);
 
 router.route("/currentTutor").get(authenticateTutor, currentTutor);
 

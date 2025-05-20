@@ -11,6 +11,9 @@ import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import swagger from "./swagger.json" with { type: 'json' };
 
+import { AgendaSetup } from './services/index.js';
+
+
 // Set up Swagger UI with specific options
 const options = {
   swaggerOptions: {
@@ -33,9 +36,12 @@ import apiKeyMiddleware from "./middleware/api-key.js";
 // routers
 import userAuthRouter from "./routes/userAuthRoutes.js";
 import tutorAuthRouter from "./routes/tutorAuthRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 import tutorRouter from "./routes/tutorRoutes.js";
 import courseRouter from "./routes/courseRoutes.js";
 import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
+import wishListRouter from "./routes/wishListRoutes.js";
+import paymentRouter from "./routes/paymentRoutes.js";
 
 const connectionString = process.env.MONGO_URL || "";
 
@@ -44,6 +50,11 @@ if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
+// Setup Agenda and make it available throughout the app
+const agenda = AgendaSetup(connectionString)
+app.set('agenda', agenda);
+
+
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "100000000mb" }));
 app.use(express.urlencoded({ limit: "100000000mb", extended: true }));
@@ -51,12 +62,37 @@ app.use(xss());
 app.use(mongoSanitize());
 
 // app.use(cors());
+// CORS Middleware - Move this before other middleware to handle preflight requests
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? ["https://skillsi-frontend.vercel.app"]
+    : ["http://localhost:5173", "http://localhost:5174"];
+
+// Improved CORS configuration
 app.use(
   cors({
-    origin: "*",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log("Origin not allowed by CORS:", origin);
+        callback(null, false);
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
+
+// Add explicit handling for OPTIONS requests
+app.options("/{*any}", cors());
+
 
 // Optimized MongoDB connection
 let cachedDb: typeof mongoose | null = null;
@@ -131,16 +167,22 @@ app.use("/api/v1", apiKeyMiddleware);
 // Add your API routes here
 app.use("/api/v1/userAuth", userAuthRouter);
 app.use("/api/v1/tutorAuth", tutorAuthRouter);
+app.use("/api/v1/user", userRouter);
 app.use("/api/v1/tutor", tutorRouter);
 app.use("/api/v1/course", courseRouter);
 app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
-// app.use("/api/v1/admin", adminRouter);
-// app.use("/api/v1/user", userRouter);
-// app.use("/api/v1/training", awarenessTrainingRouter);
-// app.use("/api/v1/template", phishingTemplateRouter);
+app.use("/api/v1/wishList", wishListRouter);
+app.use("/api/v1/payment", paymentRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
+
+// Graceful shutdown handling
+process.on('SIGTERM', async () => {
+  console.log('Shutting down...');
+  await agenda.stop();
+  process.exit(0);
+});
 
 const port = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== "production") {

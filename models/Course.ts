@@ -11,17 +11,17 @@ interface ICourse extends Document {
   targetAudience: [string];
   category: String;
   subcategory: String;
-  noOfStudents: Number;
+  noOfStudents: number;
   language: string;
   otherLanguages: [string];
   thumbnail: String;
-  rating: Number;
-  totalRating: Number;
-  totalUserRated: Number;
+  rating: number;
+  totalRating: number;
+  totalUserRated: number;
   promoVideoUrl: String;
-  priceInNaira: Number;
-  priceInDollar: Number;
-  priceInPounds: Number;
+  priceInNaira: number;
+  priceInDollar: number;
+  priceInPounds: number;
   tutor: Types.ObjectId;
 }
 

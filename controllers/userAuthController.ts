@@ -7,13 +7,20 @@ import { TokenUser } from "../type.js";
 
 const register = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { fullName, email, password, authProvider, deviceId } = req.body;
+    const { fullName, email, password, authProvider, deviceToken } = req.body;
 
     // Validate input
-    if (!fullName || !email || !authProvider || !deviceId) {
+    if (!fullName || !email || !authProvider || !deviceToken) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json({ message: "All fields are required." });
+    }
+
+    const exisitingUser = await User.findOne({ email });
+    if (exisitingUser) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Email already in use." });
     }
 
     if (authProvider === "manual") {
@@ -39,14 +46,14 @@ const register = async (req: Request, res: Response): Promise<any> => {
       fullName,
       email,
       password,
-      currentDeviceId: deviceId,
+      currentDeviceToken: deviceToken,
     });
 
     res
       .status(StatusCodes.CREATED)
       .json({ success: true, message: "Registered successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Error signing up:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Server error" });
@@ -55,12 +62,12 @@ const register = async (req: Request, res: Response): Promise<any> => {
 
 const login = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { email, password, authProvider, deviceId } = req.body;
+    const { email, password, authProvider, deviceToken } = req.body;
 
-    if (!email || !authProvider || !deviceId) {
+    if (!email || !authProvider || !deviceToken) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ message: "Email and authProvider are required." });
+        .json({ message: "All fields are required." });
     }
 
     // Find user by email
@@ -71,6 +78,13 @@ const login = async (req: Request, res: Response): Promise<any> => {
         .json({ message: "Invalid Credentials" });
     }
 
+    if (user.accountClosed) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: "Your account has been closed.",
+      });
+    }
+
     // Handle manual authentication
     if (authProvider === "manual") {
       if (!password) {
@@ -79,7 +93,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
           message: "Password is required for manual login.",
         });
       }
-      
+
       // Check if password exists on the user object
       if (!user.password) {
         return res.status(StatusCodes.BAD_REQUEST).json({
@@ -96,7 +110,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
       }
 
       // Restrict login if user is already logged in from a different device
-      if (user.isLoggedIn && user.currentDeviceId !== deviceId) {
+      if (user.isLoggedIn && user.currentDeviceToken !== deviceToken) {
         return res.status(StatusCodes.FORBIDDEN).json({
           success: false,
           message:
@@ -105,12 +119,12 @@ const login = async (req: Request, res: Response): Promise<any> => {
       }
 
       // Update user session
-      user.currentDeviceId = deviceId;
+      user.currentDeviceToken = deviceToken;
       user.isLoggedIn = true;
 
-      // Add to registeredDeviceIds if not already present
-      if (!user.registeredDeviceIds?.includes(deviceId)) {
-        user.registeredDeviceIds?.push(deviceId);
+      // Add to deviceTokens if not already present
+      if (!user.deviceTokens?.includes(deviceToken)) {
+        user.deviceTokens?.push(deviceToken);
       }
 
       user.loggedInTimes = (user.loggedInTimes || 0) + 1;
@@ -145,7 +159,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
       message: "Unsupported auth provider",
     });
   } catch (error) {
-    console.error("Error logging in", error);
+    console.error("Error logging in:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Internal Server Error" });
@@ -165,7 +179,7 @@ const logout = async (req: Request, res: Response): Promise<any> => {
     }
 
     user.isLoggedIn = false;
-    user.currentDeviceId = undefined;
+    user.currentDeviceToken = undefined;
 
     await user.save();
 
@@ -174,7 +188,7 @@ const logout = async (req: Request, res: Response): Promise<any> => {
       message: "Logged out successfully",
     });
   } catch (error) {
-    console.error("Error logging out", error);
+    console.error("Error logging out:", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal Server Error",

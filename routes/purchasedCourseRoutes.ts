@@ -1,4 +1,5 @@
 import express from "express";
+const router = express.Router();
 
 import { authenticateUser } from "../middleware/authentication.js";
 
@@ -6,8 +7,6 @@ import {
   fetchPaidCoursesUser,
   fetchSinglePaidCourseUser,
 } from "../controllers/purchasedCourseController.js"; // Adjust the import path
-
-const router = express.Router();
 
 router
   .route("/fetchPaidCoursesUser")

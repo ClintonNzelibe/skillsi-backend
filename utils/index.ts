@@ -18,8 +18,6 @@ import checkPermissions from "./checkPermissions.js";
 import sendVerificationEmail from "./sendVerificationEmail.js";
 import sendPasswordEmail from "./sendPasswordEmail.js";
 import sendResetPasswordEmail from "./sendResetPasswordEmail.js";
-import sendPhishingEmail from "./sendPhishingEmail.js";
-// import sendOnboardingEmail from "./sendOnboardingEmail";
 import createHash from "./createHash.js";
 
 export {
@@ -39,7 +37,5 @@ export {
   sendVerificationEmail,
   sendPasswordEmail,
   sendResetPasswordEmail,
-  sendPhishingEmail,
-  // sendOnboardingEmail,
   createHash,
 };

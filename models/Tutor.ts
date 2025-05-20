@@ -23,6 +23,7 @@ export interface ITutor extends Document {
   lastLoggedIn?: Date;
   loggedInTimes?: number;
   status?: "pending" | "approved" | "rejected" | "suspended";
+  balance: number;
 
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -102,6 +103,10 @@ const TutorSchema: Schema = new Schema(
       type: String,
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "approved",
+    },
+    Balance: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

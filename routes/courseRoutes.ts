@@ -1,4 +1,5 @@
 import express from "express";
+const router = express.Router();
 
 import {
   authenticateAdmin,
@@ -15,7 +16,6 @@ import {
   fetchSingleCourseUser,
 } from "../controllers/courseController.js"; // Adjust the import path
 
-const router = express.Router();
 
 router.route("/createCourse").post(authenticateAdmin, createCourse);
 

@@ -94,7 +94,7 @@ const currentTutor = async (req: Request, res: Response): Promise<any> => {
     if (!tutor) {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json({ success: false, message: "tutor doesn't exist" });
+        .json({ success: false, message: "Tutor doesn't exist" });
     }
 
     res.status(StatusCodes.OK).json({

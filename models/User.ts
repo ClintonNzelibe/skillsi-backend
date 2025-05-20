@@ -6,8 +6,15 @@ interface IUser extends Document {
   fullName: string;
   email: string;
   password: string;
-  registeredDeviceIds?: [string];
-  currentDeviceId?: string;
+  profilePicture?: string;
+  accountClosed?: boolean;
+  notificationPreferences?: {
+    inApp: boolean;
+    email: boolean;
+  };
+  learningReminder?: boolean;
+  deviceTokens?: [string];
+  currentDeviceToken?: string;
   isLoggedIn?: boolean;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
@@ -46,11 +53,28 @@ const UserSchema: Schema<IUser> = new Schema(
       select: false,
       minlength: 12,
     },
-    registeredDeviceIds: {
+    profilePicture: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultProfilePicture.png",
+    },
+    accountClosed: {
+      type: Boolean,
+      default: false,
+    },
+    notificationPreferences: {
+      inApp: { type: Boolean, default: false },
+      email: { type: Boolean, default: false },
+    },
+    learningReminder: {
+      type: Boolean,
+      default: false,
+    },
+    deviceTokens: {
       type: [String],
       default: [],
     },
-    currentDeviceId: {
+    currentDeviceToken: {
       type: String,
       default: "",
       required: [true, "Please provide current device id"],
