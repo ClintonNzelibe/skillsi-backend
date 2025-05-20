@@ -176,7 +176,7 @@ const updateNotificationPreferences = async (
   }
 };
 
-const toggleReminder = async (req: Request, res: Response) => {
+const toggleReminder = async (req: Request, res: Response): Promise<any> => {
   try {
     const { learningReminder } = req.body;
     const userId = req.user?.userId;
@@ -187,6 +187,13 @@ const toggleReminder = async (req: Request, res: Response) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
+    if (typeof learningReminder !== "boolean") {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid value for learningReminder",
+      });
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       return res
@@ -194,13 +201,15 @@ const toggleReminder = async (req: Request, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
-    if (typeof learningReminder === "boolean") {
-      user.learningReminder = learningReminder;
-    }
+    // if (typeof learningReminder === "boolean") {
+    //   user.learningReminder = learningReminder;
+    // }
 
+    user.learningReminder = learningReminder;
     await user.save();
 
     res.status(StatusCodes.OK).json({
+      success: true,
       message: `Learning Reminder ${
         learningReminder ? "activated" : "deactivated"
       } successfully`,

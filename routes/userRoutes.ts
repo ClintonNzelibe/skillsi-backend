@@ -8,6 +8,7 @@ import {
   changePassword,
   closeAccount,
   updateNotificationPreferences,
+  toggleReminder,
   currentUser,
 } from "../controllers/userController.js";
 
@@ -22,6 +23,8 @@ router.route("/closeAccount").post(authenticateUser, closeAccount);
 router
   .route("/updateNotificationPreferences")
   .patch(authenticateUser, updateNotificationPreferences);
+
+router.route("/toggleReminder").post(authenticateUser, toggleReminder);
 
 router.route("/currentUser").get(authenticateUser, currentUser);
 
