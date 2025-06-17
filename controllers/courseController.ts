@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UploadFileToCloudinary } from "../helpers/index.js"; // Your cloudinary config file
+import Tutor from "../models/Tutor.js";
 import Course from "../models/Course.js";
 import CourseModule from "../models/CourseModule.js";
 import CourseLesson from "../models/CourseLesson.js";
@@ -84,8 +85,14 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       promoVideoUrl: promoVideoFinalUrl,
     });
 
+    let totalModules = 0;
+    let totalLessons = 0;
+    let totalDuration = 0;
+
     // Loop through modules and lessons
     for (const module of modules) {
+      totalModules++;
+
       const createdModule = await CourseModule.create({
         courseId: newCourse._id,
         title: module.title,
@@ -93,6 +100,10 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       });
 
       for (const lesson of module.lessons) {
+        totalLessons++;
+        totalDuration += lesson.duration || 0;
+
+        // Handle different lesson types
         let videoUrl = "";
         let resources: string[] = [];
 
@@ -137,6 +148,18 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    // ✅ Update course with totals
+    await Course.findByIdAndUpdate(newCourse._id, {
+      totalModules,
+      totalLessons,
+      totalDuration,
+    });
+
+    // ✅ Increment tutor's course count
+    await Tutor.findByIdAndUpdate(req.tutor?.tutorId, {
+      $inc: { totalCourses: 1 },
+    });
+
     res
       .status(StatusCodes.CREATED)
       .json({ success: true, message: "Course created successfully" });
@@ -177,7 +200,8 @@ const fetchAllCoursesUser = async (
       .populate(
         "tutor",
         "fName lName email profileImage totalStudent totalReviews totalCourses"
-      );
+      )
+      .select("-totalEarnings -totalAffiliate -totalEnrollments");
     if (!courses || courses.length === 0) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -189,17 +213,15 @@ const fetchAllCoursesUser = async (
     const totalCoursesCount = await Course.countDocuments(filter);
     const totalPages = Math.ceil(totalCoursesCount / limit);
 
-    res
-      .status(StatusCodes.OK)
-      .json({
-        success: true,
-        message: "Fetched successfully",
-        courses,
-        page,
-        totalCoursePerPage: courses.length,
-        totalPages,
-        totalCourses: totalCoursesCount,
-      });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Fetched successfully",
+      courses,
+      page,
+      totalCoursePerPage: courses.length,
+      totalPages,
+      totalCourses: totalCoursesCount,
+    });
   } catch (error) {
     console.error("Error fetching courses", error);
     res
@@ -214,10 +236,14 @@ const fetchSingleCourseUser = async (
 ): Promise<any> => {
   try {
     const { courseId } = req.params;
-    const course = await Course.findById(courseId).populate(
-      "tutor",
-      "fName lName email profileImage totalStudent totalReviews totalCourses"
-    );
+    const course = await Course.findById(courseId)
+      .populate(
+        "tutor",
+        "fName lName email profileImage totalStudent totalReviews totalCourses"
+      )
+      .select(
+        "-totalEarnings -totalAffiliate -totalEnrollments -promoVideoUrl"
+      );
     if (!course) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,

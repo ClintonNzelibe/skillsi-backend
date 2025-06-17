@@ -1,12 +1,23 @@
 import { Request, Response } from "express";
 import Tutor from "../models/Tutor.js";
 import { StatusCodes } from "http-status-codes";
-import { createTokenTutor, createTutorJWT } from "../utils/index.js";
+import {
+  createHash,
+  createTokenTutor,
+  createTutorJWT,
+  sendVerificationEmail,
+} from "../utils/index.js";
 import { TokenTutor } from "../type.js";
+import {
+  DeleteFileFromCloudinary,
+  PasswordValidation,
+  TokenGenerator,
+  UploadFileToCloudinary,
+} from "../helpers/index.js";
 
 const signupTutor = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { fName, lName, email, password } = req.body;
+    const { fName, lName, email, password, confirmPassword } = req.body;
 
     if (!fName || !lName || !email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -19,20 +30,50 @@ const signupTutor = async (req: Request, res: Response): Promise<any> => {
     if (existingTutor) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Email already in use",
+        message: "Email already exist",
       });
     }
 
-    await Tutor.create({
+    // Validate password criteria
+    const passwordError = PasswordValidation(password);
+    if (passwordError) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: passwordError,
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Password and Confirm Password doesn't match.",
+      });
+    }
+
+    const {
+      finalVerificationToken,
+      verificationToken,
+      verificationTokenExpirationDate,
+    } = await TokenGenerator();
+
+    const tutor = await Tutor.create({
       fName,
       lName,
       email,
       password,
+      verificationToken: finalVerificationToken,
+      verificationTokenExpirationDate: verificationTokenExpirationDate,
+    });
+
+    await sendVerificationEmail({
+      email: tutor.email,
+      verificationToken,
     });
 
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: "Tutor registered successfully",
+      message: "Tutor registered successfully, Please check your email for OTP",
+      email: tutor.email,
     });
   } catch (error) {
     console.error("Signup error", error);
@@ -40,6 +81,115 @@ const signupTutor = async (req: Request, res: Response): Promise<any> => {
       success: false,
       message: "Internal Server Error",
     });
+  }
+};
+
+// verifyEmail
+const verifyEmail = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { verificationToken, email } = req.body;
+
+    if (!verificationToken || !email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
+    const tutor = await Tutor.findOne({ email });
+
+    if (!tutor) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Tutor not found with this email",
+      });
+    }
+
+    const currentDate = new Date();
+
+    if (
+      tutor.verificationToken !== createHash(verificationToken) ||
+      (tutor.verificationTokenExpirationDate &&
+        tutor.verificationTokenExpirationDate < currentDate)
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Verification Failed, Token Incorrect",
+      });
+      // return
+    }
+
+    if (!tutor.isVerified) {
+      tutor.isVerified = true;
+      tutor.verificationToken = "";
+      tutor.verified = new Date();
+      await tutor.save();
+
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Email Verified, please proceed to finishing your onboarding",
+      });
+    } else {
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Email is already verified, please kindly proceed to login",
+
+        email: tutor.email,
+      });
+    }
+  } catch (error) {
+    console.error("Verifying email error", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// resendToken
+const resendToken = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
+    const tutor = await Tutor.findOne({ email });
+
+    if (!tutor) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Tutor not found with this email",
+      });
+    }
+
+    const {
+      finalVerificationToken,
+      verificationToken,
+      verificationTokenExpirationDate,
+    } = await TokenGenerator();
+
+    await sendVerificationEmail({
+      email,
+      verificationToken,
+    });
+
+    tutor.verificationToken = finalVerificationToken;
+    tutor.verificationTokenExpirationDate = verificationTokenExpirationDate;
+    await tutor.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Verification Token sent, please kindly check your email",
+    });
+  } catch (error) {
+    console.error("Resending verification token error", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -61,6 +211,12 @@ const signinTutor = async (req: Request, res: Response): Promise<any> => {
         success: false,
         message: "Invalid credentials",
       });
+    }
+
+    if (!tutor.isVerified) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Please verify your email" });
     }
 
     if (tutor.status !== "approved") {
@@ -95,9 +251,71 @@ const signinTutor = async (req: Request, res: Response): Promise<any> => {
     console.error("Signin error", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: "Internal server error",
+      message: "Internal Server Error",
     });
   }
 };
 
-export { signupTutor, signinTutor };
+const finishOnboarding = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email, expertise, profilePicture } = req.body;
+    if (!email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
+    const tutor = await Tutor.findOne({ email });
+    if (!tutor) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Tutor not found with this email",
+      });
+    }
+
+    // Upload new profile picture if provided and different from existing
+    if (profilePicture && profilePicture.startsWith("data:")) {
+      // Delete existing image if it exists
+      if (tutor.profilePicture) {
+        await DeleteFileFromCloudinary(tutor.profilePicture);
+      }
+
+      const uploadResult = await UploadFileToCloudinary(
+        profilePicture,
+        {
+          folder: "Tutors/ProfilePictures",
+          allowedFileTypes: ["image/png", "image/jpg", "image/jpeg"],
+          maxSizeInMB: 5,
+        },
+        res
+      );
+
+      tutor.profilePicture = uploadResult?.secure_url;
+    }
+
+    if (expertise !== undefined) tutor.expertise = expertise;
+    await tutor.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tutor onboarding completed successfully",
+      // tutor: {
+      //   _id: tutor._id,
+      //   fName: tutor.fName,
+      //   lName: tutor.lName,
+      //   email: tutor.email,
+      //   expertise: tutor.expertise,
+      //   profilePicture: tutor.profilePicture,
+      // },
+    });
+  } catch (error) {
+    console.error("finish onboarding error", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export { signupTutor, verifyEmail, resendToken, signinTutor, finishOnboarding };

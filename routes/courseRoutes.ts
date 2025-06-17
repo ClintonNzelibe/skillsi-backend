@@ -2,7 +2,7 @@ import express from "express";
 const router = express.Router();
 
 import {
-  authenticateAdmin,
+  authenticateTutor,
   authenticateUser,
 } from "../middleware/authentication.js";
 
@@ -17,7 +17,7 @@ import {
 } from "../controllers/courseController.js"; // Adjust the import path
 
 
-router.route("/createCourse").post(authenticateAdmin, createCourse);
+router.route("/createCourse").post(authenticateTutor, createCourse);
 
 router.route("/fetchAllCoursesUser").get(authenticateUser, fetchAllCoursesUser);
 

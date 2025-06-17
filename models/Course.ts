@@ -23,6 +23,16 @@ interface ICourse extends Document {
   priceInDollar: number;
   priceInPounds: number;
   tutor: Types.ObjectId;
+  allowAffiliate: boolean;
+  affliateCommission: number;
+  allowQuestions?: boolean;
+  totalEarnings: number;
+  totalAffiliate: number; // Total affiliate-driven enrollments
+  totalEnrollments: number;
+  numberOfModules?: number;
+  numberOfLessons?: number;
+  totalDuration?: number;
+  approveStatus?: "live" | "rejected" | "pending";
 }
 
 // Course Schema
@@ -133,6 +143,61 @@ const CourseSchema: Schema<ICourse> = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tutor",
       required: true,
+    },
+    allowAffiliate: {
+      type: Boolean,
+      default: false,
+    },
+    affliateCommission: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100, // Percentage
+      validate: {
+        validator: function (v: number) {
+          return v >= 0 && v <= 100;
+        },
+        message: "Affiliate commission must be between 0 and 100",
+      },
+    },
+    allowQuestions: {
+      type: Boolean,
+      default: false,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalAffiliate: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalEnrollments: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    numberOfModules: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    numberOfLessons: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalDuration: {
+      type: Number,
+      default: 0, // store in seconds or minutes as you prefer
+    },
+    approveStatus: {
+      type: String,
+      enum: ["live", "rejected", "pending"],
+      default: "live",
+      required: [true, "Please provide approval status"],
     },
   },
   { timestamps: true }

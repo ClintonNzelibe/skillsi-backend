@@ -207,9 +207,33 @@ const authorizePermissions = (...roles: string[]) => {
   };
 };
 
+// Custom middleware that tries both authentication methods
+const authenticateUserOrTutor = (req: any, res: any, next: any) => {
+  // Try user authentication first
+  authenticateUser(req, res, (userErr: any) => {
+    if (!userErr && req.user) {
+      return next(); // User authenticated successfully
+    }
+
+    // If user auth fails, try tutor authentication
+    authenticateUser(req, res, (tutorErr: any) => {
+      if (!tutorErr && req.tutor) {
+        return next(); // Tutor authenticated successfully
+      }
+
+      // Both authentications failed
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    });
+  });
+};
+
 export {
   authenticateUser,
   authenticateTutor,
   authenticateAdmin,
   authorizePermissions,
+  authenticateUserOrTutor,
 };
