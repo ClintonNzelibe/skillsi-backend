@@ -9,8 +9,11 @@ const createQuestion = async (req: Request, res: Response): Promise<any> => {
   try {
     const { courseId, question } = req.body;
 
+    const course = await Course.findById(courseId);
+
     const newQuestion = await CourseQA.create({
-      courseId,
+      course: courseId,
+      tutor: course?.tutor,
       question,
       askedBy: req.user?.userId,
     });
@@ -22,7 +25,9 @@ const createQuestion = async (req: Request, res: Response): Promise<any> => {
     });
   } catch (error) {
     console.error("Create Question Error:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal Server Error" });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -33,7 +38,10 @@ const answerQuestion = async (req: Request, res: Response): Promise<any> => {
     const { answer } = req.body;
 
     const question = await CourseQA.findById(questionId);
-    if (!question) return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Question not found" });
+    if (!question)
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Question not found" });
 
     question.answer = answer;
     question.isAnswered = true;
@@ -47,27 +55,39 @@ const answerQuestion = async (req: Request, res: Response): Promise<any> => {
     });
   } catch (error) {
     console.error("Answer Question Error:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal Server Error" });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
 // 3. Get all Questions for a Tutor (for their courses)
 const getTutorQuestions = async (req: Request, res: Response): Promise<any> => {
   try {
+    const { courseId } = req.params;
     const tutorId = req.tutor?.tutorId;
 
     // Get all course IDs created by the tutor
-    const courses = await Course.find({ tutor: tutorId }, "_id");
-    const courseIds = courses.map((course) => course._id);
+    // const courses = await Course.find({ tutor: tutorId }, "_id");
+    // const courseIds = courses.map((course) => course._id);
 
-    const questions = await CourseQA.find({ courseId: { $in: courseIds } })
-      .populate("askedBy", "fName lName email")
-      .populate("courseId", "title");
+    const questions = await CourseQA.find({ course: courseId })
+      .populate("askedBy", "profilePicture fullName email")
+      .populate("course", "bannerImage title subTitle description tutor");
 
-    res.status(StatusCodes.OK).json({ success: true, data: questions });
+    if (questions.length && tutorId !== questions[0]?.tutor?.toString()) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: "You are not authorized to view these questions",
+      });
+    }
+
+    res.status(StatusCodes.OK).json({ success: true, message: "Fetched successfully", data: questions });
   } catch (error) {
     console.error("Get Tutor Questions Error:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal Server Error" });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -78,13 +98,15 @@ const getUserQuestions = async (req: Request, res: Response): Promise<any> => {
 
     const questions = await CourseQA.find({ askedBy: userId })
       .populate("courseId", "title")
-      .populate("answeredBy", "fName lName");
+      .populate("answeredBy", "fName lName email profilePicture");
 
     res.status(StatusCodes.OK).json({ success: true, data: questions });
   } catch (error) {
     console.error("Get User Questions Error:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Internal Server Error" });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
-export {createQuestion, answerQuestion, getTutorQuestions, getUserQuestions};
+export { createQuestion, answerQuestion, getTutorQuestions, getUserQuestions };

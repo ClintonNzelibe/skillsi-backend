@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ICourseQA extends Document {
-  courseId: Types.ObjectId;
+  course: Types.ObjectId;
+  tutor?: Types.ObjectId;
   askedBy: Types.ObjectId;
   question: string;
   answer?: string;
@@ -13,9 +14,14 @@ export interface ICourseQA extends Document {
 
 const CourseQASchema: Schema<ICourseQA> = new Schema(
   {
-    courseId: {
+    course: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
+      required: true,
+    },
+    tutor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tutor",
       required: true,
     },
     askedBy: {

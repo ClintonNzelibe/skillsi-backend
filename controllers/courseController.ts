@@ -25,8 +25,22 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       priceInPounds,
       thumbnail,
       promoVideoUrl,
+      allowAffiliate,
+      affiliateCommission,
+      allowQuestions,
+      // numberOfModules,
+      // numberOfLessons,
+      // totalDuration,
       modules,
     } = req.body;
+
+    if (typeof allowAffiliate !== "boolean") {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message:
+          "Invalid value for allowAffiliate. It must be a boolean (true or false).",
+      });
+    }
 
     // Upload banner image
     const bannerRes = await UploadFileToCloudinary(
@@ -83,6 +97,9 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       bannerImage: bannerUrl,
       thumbnail: thumbnailUrl,
       promoVideoUrl: promoVideoFinalUrl,
+      allowAffiliate,
+      affiliateCommission,
+      allowQuestions,
     });
 
     let totalModules = 0;
@@ -108,16 +125,17 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
         let resources: string[] = [];
 
         if (lesson.type === "video") {
-          const videoRes = await UploadFileToCloudinary(
-            lesson.videoUrl,
-            {
-              folder: "Course",
-              allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-              maxSizeInMB: 3000000000,
-            },
-            res
-          );
-          videoUrl = videoRes.secure_url;
+          // const videoRes = await UploadFileToCloudinary(
+          //   lesson.videoUrl,
+          //   {
+          //     folder: "Course",
+          //     allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+          //     maxSizeInMB: 3000000000,
+          //   },
+          //   res
+          // );
+          // videoUrl = videoRes.secure_url;
+          videoUrl = lesson.videoUrl;
         }
 
         if (lesson.resources && lesson.resources.length > 0) {

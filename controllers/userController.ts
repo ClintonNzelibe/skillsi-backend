@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import User from "../models/User.js";
 import { StatusCodes } from "http-status-codes";
 import { UploadFileToCloudinary } from "../helpers/index.js";
+import User from "../models/User.js";
 
 const changeProfilePicture = async (
   req: Request,

@@ -1,5 +1,3 @@
-// routes/courseQA.ts
-
 import express from "express";
 const router = express.Router();
 
