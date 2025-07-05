@@ -42,6 +42,7 @@ import courseRouter from "./routes/courseRoutes.js";
 import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
 import wishListRouter from "./routes/wishListRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
+import courseQARouter from "./routes/courseQARoutes.js";
 
 const connectionString = process.env.MONGO_URL || "";
 
@@ -173,6 +174,8 @@ app.use("/api/v1/course", courseRouter);
 app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 app.use("/api/v1/wishList", wishListRouter);
 app.use("/api/v1/payment", paymentRouter);
+app.use("/api/v1/courseQA", courseQARouter);
+
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

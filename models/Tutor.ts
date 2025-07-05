@@ -18,12 +18,22 @@ export interface ITutor extends Document {
     facebook?: string;
   };
   rating?: number;
+  totalRevenue?: number;
   totalCourses?: number;
+  numberOfEdits?: number;
+  totalEnrollments?: number;
   isProfileComplete?: boolean;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
   status?: "pending" | "approved" | "rejected" | "suspended";
   balance: number;
+  verificationToken?: string;
+  verificationTokenExpirationDate?: Date;
+  verified?: Date;
+  isVerified?: boolean;
+  resetToken?: string;
+  isResetTokenVerified: boolean;
+  resetTokenExpirationDate: Date;
 
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -104,9 +114,24 @@ const TutorSchema: Schema = new Schema(
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "approved",
     },
-    Balance: {
+    balance: {
       type: Number,
       default: 0,
+    },
+    numberOfEdits: { type: Number, default: 0 },
+    verificationToken: { type: String },
+    verificationTokenExpirationDate: { type: Date },
+    verified: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    resetToken: {
+      type: String,
+    },
+    isResetTokenVerified: {
+      type: Boolean,
+      default: false,
+    },
+    resetTokenExpirationDate: {
+      type: Date,
     },
   },
   { timestamps: true }
