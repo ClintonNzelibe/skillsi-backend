@@ -25,7 +25,7 @@ router
 
 router
   .route("/fetchAllCoursesTutor")
-  .post(authenticateTutor, fetchAllCoursesTutor);
+  .get(authenticateTutor, fetchAllCoursesTutor);
 
 router
   .route("/fetchSingleCourseTutor/:courseId")
