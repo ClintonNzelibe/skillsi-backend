@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import { CourseStatus } from "../constants/index.js";
 
 // Course Interface
 interface ICourse extends Document {
@@ -32,7 +33,7 @@ interface ICourse extends Document {
   numberOfModules?: number;
   numberOfLessons?: number;
   totalDuration?: number;
-  approveStatus?: "live" | "rejected" | "pending";
+  approveStatus?: CourseStatus;
 }
 
 // Course Schema

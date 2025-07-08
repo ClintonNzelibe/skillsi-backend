@@ -8,12 +8,10 @@ import {
 
 import {
   createCourse,
-  //   getAllTrainingsAdmin,
-  //   getSingleTrainingAdmin,
-  //   updateTraining,
-  //   deleteTraining,
   fetchAllCoursesUser,
   fetchSingleCourseUser,
+  fetchAllCoursesTutor,
+  fetchSingleCourseTutor
 } from "../controllers/courseController.js"; // Adjust the import path
 
 
@@ -25,13 +23,13 @@ router
   .route("/fetchSingleCourseUser/:courseId")
   .get(authenticateUser, fetchSingleCourseUser);
 
-// router
-//   .route("/getAllTrainingsAdmin")
-//   .post(authenticateAdmin, getAllTrainingsAdmin);
+router
+  .route("/fetchAllCoursesTutor")
+  .post(authenticateTutor, fetchAllCoursesTutor);
 
-// router
-//   .route("/getSingleTrainingAdmin/:trainingId")
-//   .get(authenticateAdmin, getSingleTrainingAdmin);
+router
+  .route("/fetchSingleCourseTutor/:courseId")
+  .get(authenticateTutor, fetchSingleCourseTutor);
 
 // router
 //   .route("/updateTraining/:trainingId")
