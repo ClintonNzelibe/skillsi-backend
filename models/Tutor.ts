@@ -8,9 +8,12 @@ export interface ITutor extends Document {
   lName: string;
   email: string;
   password: string;
+  location?: string;
+  phoneNumber?: string;
   bio: string;
   expertise: string[];
   profilePicture?: string;
+  certificateImage?: string;
   socialLinks?: {
     youtube?: string;
     linkedin?: string;
@@ -73,6 +76,24 @@ const TutorSchema: Schema = new Schema(
       select: false,
       minlength: 12,
     },
+    location: {
+      type: String,
+      // required: true,
+      default: "",
+      validate: {
+        validator: (str: string) => validator.isLength(str, { min: 2 }),
+        message: "Location must be at least 2 characters long",
+      },
+    },
+    phoneNumber: {
+      type: String,
+      validate: {
+        validator: (str: string) => validator.isMobilePhone(str, "any"),
+        message: "Please provide a valid phone number",
+      },
+      trim: true,
+      default: "",
+    },
     bio: {
       type: String,
       // required: true,
@@ -83,6 +104,13 @@ const TutorSchema: Schema = new Schema(
     },
     profilePicture: {
       type: String,
+      default:
+        "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultProfilePicture.png",
+    },
+    certificateImage: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultCertificateImage.png",
     },
     socialLinks: {
       youtube: String,

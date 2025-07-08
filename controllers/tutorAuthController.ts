@@ -258,7 +258,14 @@ const signinTutor = async (req: Request, res: Response): Promise<any> => {
 
 const finishOnboarding = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { email, expertise, profilePicture } = req.body;
+    const {
+      email,
+      expertise,
+      location,
+      phoneNumber,
+      profilePicture,
+      certificateImage,
+    } = req.body;
     if (!email) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -271,6 +278,17 @@ const finishOnboarding = async (req: Request, res: Response): Promise<any> => {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: "Tutor not found with this email",
+      });
+    }
+
+    if (
+      !Array.isArray(expertise) ||
+      expertise.length === 0 ||
+      !expertise.every((item) => typeof item === "string")
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Expertise must be a non-empty array of strings",
       });
     }
 
@@ -294,7 +312,33 @@ const finishOnboarding = async (req: Request, res: Response): Promise<any> => {
       tutor.profilePicture = uploadResult?.secure_url;
     }
 
-    if (expertise !== undefined) tutor.expertise = expertise;
+    // Upload new certificate image if provided and different from existing
+    if (certificateImage && certificateImage.startsWith("data:")) {
+      if (tutor.certificateImage) {
+        await DeleteFileFromCloudinary(tutor.certificateImage);
+      }
+
+      const uploadResult = await UploadFileToCloudinary(
+        certificateImage,
+        {
+          folder: "Tutors/CertificateImages",
+          allowedFileTypes: [
+            "image/png",
+            "image/jpg",
+            "image/jpeg",
+            "application/pdf",
+          ],
+          maxSizeInMB: 5,
+        },
+        res
+      );
+
+      tutor.certificateImage = uploadResult?.secure_url;
+    }
+
+    tutor.expertise = expertise;
+    if (location !== undefined) tutor.location = location;
+    if (phoneNumber !== undefined) tutor.phoneNumber = phoneNumber;
     await tutor.save();
 
     res.status(StatusCodes.OK).json({
