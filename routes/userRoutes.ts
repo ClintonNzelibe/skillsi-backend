@@ -10,6 +10,10 @@ import {
   updateNotificationPreferences,
   toggleReminder,
   currentUser,
+  forgotPassword,
+  verifyTokenResetPassword,
+  resetPassword,
+  resendToken,
 } from "../controllers/userController.js";
 
 router
@@ -27,5 +31,13 @@ router
 router.route("/toggleReminder").post(authenticateUser, toggleReminder);
 
 router.route("/currentUser").get(authenticateUser, currentUser);
+
+router.route("/forgotPassword").post(forgotPassword);
+
+router.route("/verifyTokenResetPassword").post(verifyTokenResetPassword);
+
+router.route("/resetPassword").patch(resetPassword);
+
+router.route("/resendToken").post(resendToken);
 
 export default router;

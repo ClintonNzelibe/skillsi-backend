@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { UploadFileToCloudinary } from "../helpers/index.js";
+import {
+  UploadFileToCloudinary,
+  PasswordValidation,
+  TokenGenerator,
+} from "../helpers/index.js";
 import User from "../models/User.js";
+import { createHash, sendResetPasswordEmail } from "../utils/index.js";
 
 const changeProfilePicture = async (
   req: Request,
@@ -253,6 +258,204 @@ const currentUser = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+// forgotPassword
+const forgotPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Please provide valid email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Email doesn't exist" });
+    }
+
+    // Generate verification token only for company registration
+    const tokenData = await TokenGenerator();
+    const finalVerificationToken = tokenData.finalVerificationToken;
+    const verificationToken = tokenData.verificationToken;
+    const verificationTokenExpirationDate =
+      tokenData.verificationTokenExpirationDate;
+
+    await sendResetPasswordEmail({
+      fName: user.fullName && user.fullName.length > 0 ? user.fullName : "User",
+      email: user.email,
+      verificationToken,
+    });
+
+    user.resetToken = finalVerificationToken;
+    user.resetTokenExpirationDate = verificationTokenExpirationDate;
+    await user.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Please check your email for OTP",
+      email: user.email,
+    });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// verifyEmailResetPassword
+const verifyTokenResetPassword = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { verificationToken, email } = req.body;
+    if (!verificationToken || !email) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Please provide all values" });
+    }
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Email doesn't exist" });
+    }
+
+    const currentDate = new Date();
+
+    if (
+      user.resetToken === createHash(verificationToken) &&
+      user.resetTokenExpirationDate > currentDate
+    ) {
+      user.isResetTokenVerified = true;
+      user.resetToken = "";
+      user.resetTokenExpirationDate = new Date();
+      await user.save();
+
+      res
+        .status(StatusCodes.OK)
+        .json({ success: true, message: "OTP verification successful" });
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "OTP invalid or OTP already expired",
+      });
+    }
+  } catch (error) {
+    console.error("Error Verifying password:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// changePassword
+const resetPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+    if (!email || !newPassword || !confirmPassword) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Please provide all values" });
+    }
+
+    // Validate password criteria
+    const passwordError = PasswordValidation(newPassword);
+    if (passwordError) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: passwordError,
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Password doesn't match" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Email doesn't exist" });
+    }
+
+    if (!user.isResetTokenVerified) {
+      return res
+        .status(StatusCodes.UNAUTHORIZED)
+        .json({ success: false, message: "Please verify your email" });
+    }
+
+    user.password = newPassword;
+    user.isResetTokenVerified = true;
+    await user.save();
+
+    res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Password changed successful" });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const resendToken = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Please provide valid email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Email doesn't exist" });
+    }
+
+    // Generate verification token only for company registration
+    const tokenData = await TokenGenerator();
+    const finalVerificationToken = tokenData.finalVerificationToken;
+    const verificationToken = tokenData.verificationToken;
+    const verificationTokenExpirationDate =
+      tokenData.verificationTokenExpirationDate;
+
+    await sendResetPasswordEmail({
+      fName: user.fullName && user.fullName.length > 0 ? user.fullName : "User",
+      email,
+      verificationToken,
+    });
+
+    user.resetToken = finalVerificationToken;
+    user.resetTokenExpirationDate = verificationTokenExpirationDate;
+    await user.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "OTP sent, please kindly check your email",
+    });
+  } catch (error) {
+    console.error("Error resending token:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   changeProfilePicture,
   changePassword,
@@ -260,4 +463,8 @@ export {
   updateNotificationPreferences,
   toggleReminder,
   currentUser,
+  forgotPassword,
+  verifyTokenResetPassword,
+  resetPassword,
+  resendToken,
 };

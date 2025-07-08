@@ -16,6 +16,11 @@ interface IUser extends Document {
   deviceTokens?: [string];
   currentDeviceToken?: string;
   isLoggedIn?: boolean;
+  resetToken?: string;
+  isResetTokenVerified: boolean;
+  resetTokenExpirationDate: Date;
+  isProfileComplete?: boolean;
+  numberOfEdits?: number;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
 
@@ -87,27 +92,24 @@ const UserSchema: Schema<IUser> = new Schema(
     //   type: Boolean,
     //   default: false,
     // },
-    // resetToken: {
-    //   type: String,
-    // },
-    // isResetTokenVerified: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-    // resetTokenExpirationDate: {
-    //   type: Date,
-    // },
-    // department: {
-    //   type: String,
-    // },
-    // isProfileComplete: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-    // numberOfEdits: {
-    //   type: Number,
-    //   default: 0,
-    // },
+    resetToken: {
+      type: String,
+    },
+    isResetTokenVerified: {
+      type: Boolean,
+      default: false,
+    },
+    resetTokenExpirationDate: {
+      type: Date,
+    },
+    isProfileComplete: {
+      type: Boolean,
+      default: false,
+    },
+    numberOfEdits: {
+      type: Number,
+      default: 0,
+    },
     lastLoggedIn: {
       type: Date,
     },

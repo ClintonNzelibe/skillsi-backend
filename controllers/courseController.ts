@@ -125,17 +125,17 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
         let resources: string[] = [];
 
         if (lesson.type === "video") {
-          // const videoRes = await UploadFileToCloudinary(
-          //   lesson.videoUrl,
-          //   {
-          //     folder: "Course",
-          //     allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-          //     maxSizeInMB: 3000000000,
-          //   },
-          //   res
-          // );
-          // videoUrl = videoRes.secure_url;
-          videoUrl = lesson.videoUrl;
+          const videoRes = await UploadFileToCloudinary(
+            lesson.videoUrl,
+            {
+              folder: "Course",
+              allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+              maxSizeInMB: 150,
+            },
+            res
+          );
+          videoUrl = videoRes.secure_url;
+          // videoUrl = lesson.videoUrl;
         }
 
         if (lesson.resources && lesson.resources.length > 0) {

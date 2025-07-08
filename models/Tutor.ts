@@ -75,11 +75,11 @@ const TutorSchema: Schema = new Schema(
     },
     bio: {
       type: String,
-      required: true,
+      // required: true,
     },
     expertise: {
       type: [String],
-      required: true,
+      // required: true,
     },
     profilePicture: {
       type: String,
