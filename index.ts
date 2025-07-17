@@ -66,7 +66,7 @@ app.use(mongoSanitize());
 // CORS Middleware - Move this before other middleware to handle preflight requests
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://skillsi-frontend.vercel.app"]
+    ? ["https://skillsi-frontend.vercel.app", "http://localhost:5173", "http://localhost:5174"]
     : ["http://localhost:5173", "http://localhost:5174"];
 
 // Improved CORS configuration

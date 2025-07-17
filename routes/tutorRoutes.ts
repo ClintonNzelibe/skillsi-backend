@@ -7,7 +7,7 @@ import {
   updateTutorProfile,
   currentTutor,
   forgotPassword,
-  verifyEmailResetPassword,
+  verifyTokenResetPassword,
   resetPassword,
   resendToken,
 } from "../controllers/tutorController.js";
@@ -20,7 +20,7 @@ router.route("/currentTutor").get(authenticateTutor, currentTutor);
 
 router.route("/forgotPassword").post(forgotPassword);
 
-router.route("/verifyEmailResetPassword").post(verifyEmailResetPassword);
+router.route("/verifyTokenResetPassword").post(verifyTokenResetPassword);
 
 router.route("/resetPassword").patch(resetPassword);
 

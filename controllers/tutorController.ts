@@ -180,7 +180,7 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
 };
 
 // verifyEmailResetPassword
-const verifyEmailResetPassword = async (
+const verifyTokenResetPassword = async (
   req: Request,
   res: Response
 ): Promise<any> => {
@@ -386,7 +386,7 @@ export {
   updateTutorProfile,
   currentTutor,
   forgotPassword,
-  verifyEmailResetPassword,
+  verifyTokenResetPassword,
   resetPassword,
   resendToken,
 };
