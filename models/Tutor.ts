@@ -81,14 +81,14 @@ const TutorSchema: Schema = new Schema(
       // required: true,
       default: "",
       validate: {
-        validator: (str: string) => validator.isLength(str, { min: 2 }),
+        validator: (str: string) => str === "" || validator.isLength(str, { min: 20 }),
         message: "Location must be at least 2 characters long",
       },
     },
     phoneNumber: {
       type: String,
       validate: {
-        validator: (str: string) => validator.isMobilePhone(str, "any"),
+        validator: (str: string) => str === "" || validator.isMobilePhone(str, "any"),
         message: "Please provide a valid phone number",
       },
       trim: true,
