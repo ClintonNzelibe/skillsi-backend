@@ -35,6 +35,26 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       modules,
     } = req.body;
 
+    if (
+      !bannerImage ||
+      !title ||
+      !subTitle ||
+      !description ||
+      !objectives ||
+      !requirements ||
+      !targetAudience ||
+      !category ||
+      !subcategory ||
+      !language ||
+      !thumbnail ||
+      !promoVideoUrl
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all required fields",
+      });
+    }
+
     if (typeof allowAffiliate !== "boolean") {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -222,8 +242,8 @@ const fetchAllCoursesUser = async (
       )
       .select("-totalEarnings -totalAffiliate -totalEnrollments");
     if (!courses || courses.length === 0) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
+      return res.status(StatusCodes.OK).json({
+        success: true,
         message: "No courses found",
         courses: [],
       });
@@ -360,8 +380,8 @@ const fetchAllCoursesTutor = async (
       )
       .select("-totalEarnings -totalAffiliate -totalEnrollments");
     if (!courses || courses.length === 0) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
+      return res.status(StatusCodes.OK).json({
+        success: true,
         message: "No courses found",
         courses: [],
       });

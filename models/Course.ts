@@ -86,7 +86,8 @@ const CourseSchema: Schema<ICourse> = new Schema(
     },
     noOfStudents: {
       type: Number,
-      required: [true, "Please provide number of students"],
+      default: 0,
+      // required: [true, "Please provide number of students"],
       trim: true,
     },
     language: {
@@ -106,7 +107,7 @@ const CourseSchema: Schema<ICourse> = new Schema(
     },
     promoVideoUrl: {
       type: String,
-      required: [true, "Please provide promo video URL"],
+      // required: [true, "Please provide promo video URL"],
       trim: true,
     },
     priceInNaira: {
