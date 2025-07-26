@@ -73,7 +73,9 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       },
       res
     );
-    const bannerUrl = bannerRes.secure_url;
+    const bannerUrl = bannerRes;
+    console.log("Banner URL:", bannerUrl, bannerRes);
+    
 
     // Upload thumbnail
     const thumbnailRes = await UploadFileToCloudinary(
@@ -85,7 +87,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       },
       res
     );
-    const thumbnailUrl = thumbnailRes.secure_url;
+    const thumbnailUrl = thumbnailRes;
 
     // Upload promo video
     const promoVideoRes = await UploadFileToCloudinary(
@@ -97,7 +99,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       },
       res
     );
-    const promoVideoFinalUrl = promoVideoRes.secure_url;
+    const promoVideoFinalUrl = promoVideoRes;
 
     // Create course
     const newCourse = await Course.create({
@@ -155,7 +157,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
             },
             res
           );
-          videoUrl = videoRes.secure_url;
+          videoUrl = videoRes;
           // videoUrl = lesson.videoUrl;
         }
 
@@ -170,7 +172,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
               },
               res
             );
-            resources.push(result.secure_url);
+            resources.push(result);
           }
         }
 
