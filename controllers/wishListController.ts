@@ -26,7 +26,7 @@ const addToWishList = async (req: Request, res: Response): Promise<any> => {
     console.error("Error adding to wishlist:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error" });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -78,7 +78,7 @@ const getWishList = async (req: Request, res: Response): Promise<any> => {
     console.error("Error ggetting wishlist:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error" });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -106,7 +106,7 @@ const removeFromWishList = async (
     console.error("Error removing wishlist:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error" });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -120,7 +120,7 @@ const clearWishList = async (req: Request, res: Response) => {
       .status(StatusCodes.OK)
       .json({ success: true, message: "Wishlist cleared" });
   } catch (err: any) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: "Internal Server Error", error: err.message });
   }
 };
 

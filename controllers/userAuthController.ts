@@ -1,8 +1,13 @@
 import { Request, Response } from "express";
 import User from "../models/User.js";
 import { StatusCodes } from "http-status-codes";
-import { PasswordValidation } from "../helpers/index.js";
-import { createTokenUser, createUserJWT } from "../utils/index.js";
+import { PasswordValidation, TokenGenerator } from "../helpers/index.js";
+import {
+  createHash,
+  createTokenUser,
+  createUserJWT,
+  sendVerificationEmail,
+} from "../utils/index.js";
 import { TokenUser } from "../type.js";
 
 const register = async (req: Request, res: Response): Promise<any> => {
@@ -41,22 +46,145 @@ const register = async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    const {
+      finalVerificationToken,
+      verificationToken,
+      verificationTokenExpirationDate,
+    } = await TokenGenerator();
+
     // Create user object
-    await User.create({
+    const user = await User.create({
       fullName,
       email,
       password,
       currentDeviceToken: deviceToken,
+      verificationToken: finalVerificationToken,
+      verificationTokenExpirationDate: verificationTokenExpirationDate,
     });
 
-    res
-      .status(StatusCodes.CREATED)
-      .json({ success: true, message: "Registered successfully" });
+    await sendVerificationEmail({
+      email: user.email,
+      verificationToken,
+    });
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: "User registered successfully, Please check your email for OTP",
+      email: user.email,
+    });
   } catch (error) {
     console.error("Error signing up:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Server error" });
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// verifyEmail
+const verifyEmail = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { verificationToken, email } = req.body;
+
+    if (!verificationToken || !email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "User not found with this email",
+      });
+    }
+
+    const currentDate = new Date();
+
+    if (
+      user.verificationToken !== createHash(verificationToken) ||
+      (user.verificationTokenExpirationDate &&
+        user.verificationTokenExpirationDate < currentDate)
+    ) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Verification Failed, Token Incorrect",
+      });
+      // return
+    }
+
+    if (!user.isVerified) {
+      user.isVerified = true;
+      user.verificationToken = "";
+      user.verified = new Date();
+      await user.save();
+
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Email Verified, please proceed to finishing your onboarding",
+      });
+    } else {
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Email is already verified, please kindly proceed to login",
+        email: user.email,
+      });
+    }
+  } catch (error) {
+    console.error("Verifying email error", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+// resendToken
+const resendToken = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Tutor not found with this email",
+      });
+    }
+
+    const {
+      finalVerificationToken,
+      verificationToken,
+      verificationTokenExpirationDate,
+    } = await TokenGenerator();
+
+    await sendVerificationEmail({
+      email,
+      verificationToken,
+    });
+
+    user.verificationToken = finalVerificationToken;
+    user.verificationTokenExpirationDate = verificationTokenExpirationDate;
+    await user.save();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Verification Token sent, please kindly check your email",
+    });
+  } catch (error) {
+    console.error("Resending verification token error", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -107,6 +235,12 @@ const login = async (req: Request, res: Response): Promise<any> => {
         return res
           .status(StatusCodes.UNAUTHORIZED)
           .json({ success: false, message: "Invalid Credentials" });
+      }
+
+      if (!user.isVerified) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ success: false, message: "Please verify your email" });
       }
 
       // Restrict login if user is already logged in from a different device
@@ -196,4 +330,4 @@ const logout = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export { register, login, logout };
+export { register, verifyEmail, resendToken, login, logout };

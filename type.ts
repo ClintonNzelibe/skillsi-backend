@@ -22,49 +22,6 @@ export interface TokenPayload {
   email: string;
 }
 
-// admin types
-export interface Admin {
-  adminId: string;
-  email: string;
-  companyName: string;
-  fName?: string;
-  lName?: string;
-  type: string;
-  role: string;
-}
-
-export interface TokenAdmin {
-  adminId: string;
-  email: string;
-  companyName: string;
-  fName?: string;
-  lName?: string;
-  type: string;
-  role: string;
-}
-
-export interface TokenAdminPayload {
-  adminId: string;
-  email: string;
-  companyName: string;
-  fName?: string;
-  lName?: string;
-  type: string;
-  role: string;
-  // Add any other properties that you expect in the payload
-}
-
-export interface AdminJwtPayload {
-  adminId: string;
-  email: string;
-  companyName: string;
-  fName?: string;
-  lName?: string;
-  type: string;
-  role: string;
-  // Add any other properties that you expect in the payload
-}
-
 // Tutor types
 export interface Tutor {
   tutorId: string;
@@ -92,4 +49,41 @@ export interface TutorJwtPayload {
   email: string;
   fName?: string;
   lName?: string;
+}
+
+// Admin types
+export interface Admin {
+  adminId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+  role: string;
+}
+
+export interface TokenAdmin {
+  adminId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+  role: string;
+}
+
+export interface TokenAdminPayload {
+  adminId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+  role: string;
+}
+
+export interface AdminJwtPayload {
+  adminId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+  role: string;
 }

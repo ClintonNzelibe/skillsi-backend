@@ -28,7 +28,7 @@ const getAffiliateSalesByCourse = async (req: Request, res: Response): Promise<a
     });
   } catch (error) {
     console.error("Error fetching affiliate sales:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 

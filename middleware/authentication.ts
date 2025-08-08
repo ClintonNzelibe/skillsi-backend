@@ -208,7 +208,7 @@ const authorizePermissions = (...roles: string[]) => {
 };
 
 // Custom middleware that tries both authentication methods
-const authenticateUserOrTutor = (req: any, res: any, next: any) => {
+const authenticateUserOrTutorOrAdmin = (req: any, res: any, next: any) => {
   // Try user authentication first
   authenticateUser(req, res, (userErr: any) => {
     if (!userErr && req.user) {
@@ -216,7 +216,7 @@ const authenticateUserOrTutor = (req: any, res: any, next: any) => {
     }
 
     // If user auth fails, try tutor authentication
-    authenticateUser(req, res, (tutorErr: any) => {
+    authenticateTutor(req, res, (tutorErr: any) => {
       if (!tutorErr && req.tutor) {
         return next(); // Tutor authenticated successfully
       }
@@ -235,5 +235,5 @@ export {
   authenticateTutor,
   authenticateAdmin,
   authorizePermissions,
-  authenticateUserOrTutor,
+  authenticateUserOrTutorOrAdmin,
 };

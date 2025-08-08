@@ -45,20 +45,18 @@ const createTutorJWT = ({
 
 const createAdminJWT = ({
   adminId,
+  firstName,
+  lastName,
+  userName,
   email,
-  companyName,
-  fName,
-  lName,
-  type,
   role,
 }: AdminJwtPayload): string => {
   const payload: TokenAdminPayload = {
     adminId,
+    firstName,
+    lastName,
+    userName,
     email,
-    companyName,
-    fName,
-    lName,
-    type,
     role,
   };
   const token = jwt.sign(payload, process.env.JWT_SECRET as string, {

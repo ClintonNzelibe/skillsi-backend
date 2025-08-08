@@ -75,7 +75,6 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
     );
     const bannerUrl = bannerRes;
     console.log("Banner URL:", bannerUrl, bannerRes);
-    
 
     // Upload thumbnail
     const thumbnailRes = await UploadFileToCloudinary(
@@ -220,7 +219,15 @@ const fetchAllCoursesUser = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const { search } = req.query;
+    const {
+      search,
+      trending,
+      category,
+      minPrice,
+      maxPrice,
+      minRating,
+      maxRating,
+    } = req.query;
 
     let filter: any = { $and: [] };
 
@@ -233,16 +240,55 @@ const fetchAllCoursesUser = async (
       });
     }
 
+    // Category filter
+    if (category) {
+      filter.$and.push({
+        category: { $regex: new RegExp(category as string, "i") },
+      });
+    }
+
+    // Price range filter
+    if (minPrice || maxPrice) {
+      const priceFilter: any = {};
+      if (minPrice) priceFilter.$gte = Number(minPrice);
+      if (maxPrice) priceFilter.$lte = Number(maxPrice);
+      filter.$and.push({ priceInNaira: priceFilter });
+    }
+
+    // Rating range filter
+    if (minRating || maxRating) {
+      const ratingFilter: any = {};
+      if (minRating) ratingFilter.$gte = Number(minRating);
+      if (maxRating) ratingFilter.$lte = Number(maxRating);
+      filter.$and.push({ rating: ratingFilter });
+    }
+
     if (filter.$and.length === 0) delete filter.$and;
 
+    // Build sort condition in array form
+    let sortCondition: [string, 1 | -1][] = [];
+
+    if (trending === "true") {
+      sortCondition = [
+        ["totalEnrollments", -1],
+        ["rating", -1],
+        ["createdAt", -1],
+      ];
+    } else {
+      sortCondition = [["createdAt", -1]];
+    }
+
     const courses = await Course.find(filter)
+      .sort(sortCondition)
       .skip(skip)
       .limit(limit)
       .populate(
         "tutor",
         "fName lName email profileImage totalStudent totalReviews totalCourses"
       )
-      .select("-totalEarnings -totalAffiliate -totalEnrollments");
+      .select("-totalEarnings -totalAffiliate +totalEnrollments");
+
+    // const courses = await query;
     if (!courses || courses.length === 0) {
       return res.status(StatusCodes.OK).json({
         success: true,

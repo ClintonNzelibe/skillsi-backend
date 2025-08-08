@@ -10,8 +10,8 @@ interface ICourse extends Document {
   objectives: [string];
   requirements: [string];
   targetAudience: [string];
-  category: String;
-  subcategory: String;
+  category: Types.ObjectId; // Reference to Category model
+  subcategory: Types.ObjectId; // Reference to Category model
   noOfStudents: number;
   language: string;
   otherLanguages: [string];
@@ -75,14 +75,14 @@ const CourseSchema: Schema<ICourse> = new Schema(
       trim: true,
     },
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: [true, "Please provide category"],
-      trim: true,
     },
     subcategory: {
-      type: String,
-      required: [true, "Please provide subcategory"],
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: [true, "Please provide category"],
     },
     noOfStudents: {
       type: Number,

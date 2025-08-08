@@ -4,7 +4,7 @@ const router = express.Router();
 import {
   authenticateTutor,
   authenticateUser,
-  authenticateUserOrTutor,
+  authenticateUserOrTutorOrAdmin,
 } from "../middleware/authentication.js";
 
 import {
@@ -29,9 +29,9 @@ router.route("/getTutorReviews").post(authenticateTutor, getTutorReviews);
 router.patch("/:reviewId", authenticateUser, updateReview);
 
 // ✅ Single delete route for both user and tutor
-router.delete("/:reviewId", authenticateUserOrTutor, deleteReview);
+router.delete("/:reviewId", authenticateUserOrTutorOrAdmin, deleteReview);
 
 // Approve a review (Tutor)
-router.patch("/updatestatus/:reviewId", authenticateUserOrTutor, updateReviewStatus);
+router.patch("/updatestatus/:reviewId", authenticateTutor, updateReviewStatus);
 
 export default router;

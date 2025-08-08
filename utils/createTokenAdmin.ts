@@ -1,14 +1,13 @@
 import { TokenAdmin, Admin } from "../type.js";
 
 const createTokenAdmin = (admin: Admin): TokenAdmin => {
-  const { adminId, email, fName, lName, companyName, type, role } = admin;
+  const { adminId, firstName, lastName, userName, email, role } = admin;
   return {
     adminId,
+    firstName,
+    lastName,
+    userName,
     email,
-    fName,
-    lName,
-    companyName,
-    type,
     role,
   };
 };

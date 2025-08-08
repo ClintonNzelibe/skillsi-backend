@@ -30,7 +30,7 @@ const signupTutor = async (req: Request, res: Response): Promise<any> => {
     if (existingTutor) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Email already exist",
+        message: "Email already exists",
       });
     }
 

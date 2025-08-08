@@ -16,6 +16,10 @@ interface IUser extends Document {
   deviceTokens?: [string];
   currentDeviceToken?: string;
   isLoggedIn?: boolean;
+  verificationToken?: string;
+  verificationTokenExpirationDate?: Date;
+  verified?: Date;
+  isVerified?: boolean;
   resetToken?: string;
   isResetTokenVerified: boolean;
   resetTokenExpirationDate: Date;
@@ -92,6 +96,10 @@ const UserSchema: Schema<IUser> = new Schema(
     //   type: Boolean,
     //   default: false,
     // },
+    verificationToken: { type: String },
+    verificationTokenExpirationDate: { type: Date },
+    verified: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
     resetToken: {
       type: String,
     },
@@ -130,12 +138,12 @@ UserSchema.pre<IUser>("save", async function () {
 });
 
 UserSchema.methods.comparePassword = async function (
-  canditatePassword: string
+  candidatePassword: string
 ) {
   if (!this.password) {
     return false;
   }
-  const isMatch = await bcrypt.compare(canditatePassword, this.password!);
+  const isMatch = await bcrypt.compare(candidatePassword, this.password!);
   return isMatch;
 };
 
