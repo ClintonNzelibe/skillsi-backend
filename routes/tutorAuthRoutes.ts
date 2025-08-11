@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import { authenticateTutor } from "../middleware/authentication.js";
+// import { authenticateTutor } from "../middleware/authentication.js";
 
 import rateLimiter from "express-rate-limit";
 

@@ -5,10 +5,7 @@ import { PasswordValidation } from "../helpers/index.js";
 import { createAdminJWT, createTokenAdmin } from "../utils/index.js";
 import { TokenAdmin } from "../type.js";
 
-export const signupAdmin = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
+const signupAdmin = async (req: Request, res: Response): Promise<any> => {
   try {
     const { firstName, lastName, userName, email, password, confirmPassword } =
       req.body;
@@ -135,3 +132,5 @@ const signinAdmin = async (req: Request, res: Response): Promise<any> => {
     });
   }
 };
+
+export { signupAdmin, signinAdmin };

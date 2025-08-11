@@ -13,9 +13,17 @@ const apiLimiter = rateLimiter({
   message: "Too many requests from this IP, please try again after 15 minutes",
 });
 
-import { register, login, logout } from "../controllers/userAuthController.js";
+import {
+  register,
+  verifyEmail,
+  resendToken,
+  login,
+  logout,
+} from "../controllers/userAuthController.js";
 
 router.route("/register").post(register);
+router.route("/verifyEmail").post(verifyEmail);
+router.route("/resendToken").post(resendToken);
 router.route("/login").post(apiLimiter, login);
 router.route("/logout").post(authenticateUser, logout);
 

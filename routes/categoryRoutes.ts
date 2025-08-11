@@ -1,8 +1,7 @@
 import express from "express";
 
 import {
-  authenticateTutor,
-  authenticateUser,
+  authenticateAdmin,
   authenticateUserOrTutorOrAdmin,
 } from "../middleware/authentication.js";
 
@@ -14,7 +13,7 @@ import {
 
 const router = express.Router();
 
-router.route("/").post(createCategory).get(authenticateUserOrTutorOrAdmin, fetchCategories);
-router.route("/:id").put(editCategory);
+router.route("/").post(authenticateAdmin, createCategory).get(authenticateUserOrTutorOrAdmin, fetchCategories);
+router.route("/:id").patch(authenticateAdmin, editCategory);
 
 export default router;
