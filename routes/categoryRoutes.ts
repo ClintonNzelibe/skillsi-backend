@@ -9,7 +9,7 @@ import {
   editCategory,
   createCategory,
   fetchCategories,
-} from "../controllers/categoryController";
+} from "../controllers/categoryController.js";
 
 const router = express.Router();
 
