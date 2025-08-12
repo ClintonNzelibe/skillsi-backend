@@ -73,7 +73,7 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "New passwords do not match." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("+password");
     if (!user) {
       return res
         .status(StatusCodes.NOT_FOUND)
