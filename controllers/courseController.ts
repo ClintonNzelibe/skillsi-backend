@@ -6,6 +6,7 @@ import Course from "../models/Course.js";
 import CourseModule from "../models/CourseModule.js";
 import CourseLesson from "../models/CourseLesson.js";
 import { CourseStatus } from "../constants/index.js";
+import mongoose from "mongoose";
 
 const createCourse = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -242,9 +243,10 @@ const fetchAllCoursesUser = async (
 
     // Category filter
     if (category) {
-      filter.$and.push({
-        category: { $regex: new RegExp(category as string, "i") },
-      });
+      filter.$and.push({ category: new mongoose.Types.ObjectId(category as string) });
+      // filter.$and.push({
+      //   category: { $regex: new RegExp(category as string, "i") },
+      // });
     }
 
     // Price range filter
@@ -286,7 +288,7 @@ const fetchAllCoursesUser = async (
         "tutor",
         "fName lName email profileImage totalStudent totalReviews totalCourses"
       )
-      .select("-totalEarnings -totalAffiliate +totalEnrollments");
+      .select("-totalEarnings -totalAffiliate");
 
     // const courses = await query;
     if (!courses || courses.length === 0) {

@@ -16,12 +16,11 @@ interface UserTokenPayload extends BaseTokenPayload {
 
 interface AdminTokenPayload {
   email: string;
-  fName: string;
-  lName: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
   adminId: string;
-  companyName: string;
-  type: "company" | "admin" | string;
-  role: "user" | "admin" | "superadmin" | string;
+  role: "admin" | "superadmin" | string;
 }
 
 // TokenPayload type that could be returned by isTokenValid
@@ -158,12 +157,11 @@ const authenticateAdmin = async (
         payload !== null &&
         typeof payload === "object" &&
         "adminId" in payload &&
-        "companyName" in payload &&
-        "type" in payload &&
         "role" in payload &&
         "email" in payload &&
-        "fName" in payload &&
-        "lName" in payload
+        "firstName" in payload &&
+        "lastName" in payload &&
+        "userName" in payload
       );
     };
 
@@ -171,14 +169,13 @@ const authenticateAdmin = async (
       throw new UnAuthenticatedError("Authentication invalid");
     }
 
-    const { adminId, email, companyName, fName, lName, type, role } = result;
+    const { adminId, email, firstName, lastName, userName, role } = result;
     req.admin = {
       adminId,
       email,
-      companyName,
-      fName,
-      lName,
-      type,
+      firstName,
+      lastName,
+      userName,
       role,
     };
     next();
