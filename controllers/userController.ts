@@ -67,6 +67,15 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "All fields are required." });
     }
 
+    // Validate password criteria
+    const passwordError = PasswordValidation(password);
+    if (passwordError) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: passwordError,
+      });
+    }
+
     if (newPassword !== confirmPassword) {
       return res
         .status(StatusCodes.BAD_REQUEST)
