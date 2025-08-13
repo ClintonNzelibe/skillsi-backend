@@ -22,7 +22,7 @@ const NotificationSchema: Schema = new Schema(
       required: [true, "Please provide a message for the notification"],
       trim: true,
     },
-    recipient: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Or "Admin" depending on your setup
       required: [true, "Please provide a recipient for the notification"],

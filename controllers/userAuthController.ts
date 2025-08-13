@@ -209,7 +209,7 @@ const login = async (req: Request, res: Response): Promise<any> => {
     if (user.accountClosed) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
-        message: "Your account has been closed.",
+        message: "Account doesn't exist or has been closed",
       });
     }
 

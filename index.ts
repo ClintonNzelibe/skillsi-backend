@@ -45,6 +45,7 @@ import wishListRouter from "./routes/wishListRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import courseQARouter from "./routes/courseQARoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
 
 const connectionString = process.env.MONGO_URL || "";
 
@@ -179,6 +180,7 @@ app.use("/api/v1/wishList", wishListRouter);
 app.use("/api/v1/payment", paymentRouter);
 app.use("/api/v1/courseQA", courseQARouter);
 app.use("/api/v1/category", categoryRouter);
+app.use("/api/v1/notification", notificationRouter);
 
 
 app.use(notFoundMiddleware);
