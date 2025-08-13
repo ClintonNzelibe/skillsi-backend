@@ -16,6 +16,7 @@ interface ICourse extends Document {
   language: string;
   otherLanguages: [string];
   thumbnail: String;
+  totalReview: number;
   rating: number;
   totalRating: number;
   totalUserRated: number;
@@ -124,6 +125,11 @@ const CourseSchema: Schema<ICourse> = new Schema(
       type: Number,
       required: [true, "Please provide price in Pounds"],
       trim: true,
+    },
+    totalReview: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     rating: {
       type: Number,

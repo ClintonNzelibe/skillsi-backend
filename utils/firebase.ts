@@ -13,7 +13,7 @@ if (!admin.apps.length) {
       // client_id: process.env.FIREBASE_SENDER_ID,
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // e.g. your-app.appspot.com
+    // storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // e.g. your-app.appspot.com
   });
 }
 

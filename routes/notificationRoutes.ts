@@ -3,7 +3,7 @@ const router = express.Router();
 
 import {
   createNotification,
-  fetchNotifications,
+  fetchAllNotifications,
   getSingleNotification,
   markANotificationAsRead,
   markAllNotificationsAsRead,
@@ -14,9 +14,12 @@ import { authenticateUser } from "../middleware/authentication.js";
 router
   .route("/")
   .post(createNotification)
-  .get(authenticateUser, fetchNotifications);
+  .get(authenticateUser, fetchAllNotifications);
+
 router.route("/:notificationId").get(authenticateUser, getSingleNotification);
+
 router.route("/read/:notificationId").patch(authenticateUser, markANotificationAsRead);
+
 router.route("/read-all").patch(authenticateUser, markAllNotificationsAsRead);
 
 export default router;

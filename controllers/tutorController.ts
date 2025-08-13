@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Tutor from "../models/Tutor.js";
+import Course from "../models/Course.js";
+import TutorReview from "../models/TutorReview.js";
 import {
   DeleteFileFromCloudinary,
   PasswordValidation,
@@ -382,6 +384,70 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+/**
+ * Get tutor profile details
+ */
+const getTutorProfile = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { tutorId } = req.params;
+
+    // Fetch tutor details without sensitive fields
+    const tutor = await Tutor.findById(tutorId)
+      .select(
+        "fName lName bio totalStudents totalReview socialLinks profilePicture expertise rating"
+      )
+      .lean();
+
+    if (!tutor) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Tutor not found",
+      });
+    }
+
+    // Fetch tutor's courses
+    const courses = await Course.find({ tutor: tutorId })
+      .select("title description bannerImage rating totalReview _id")
+      .lean();
+
+    // Fetch tutor reviews (latest first)
+    const reviews = await TutorReview.find({ tutor: tutorId })
+      .populate("user", "fName lName profilePicture")
+      .select("rating comment user createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tutor profile fetched successfully",
+      tutor: {
+        ...tutor,
+        courses: courses.map((course) => ({
+          courseId: course._id,
+          title: course.title,
+          description: course.description,
+          bannerImage: course.bannerImage,
+          rating: course.rating,
+          totalReview: course.totalReview,
+        })),
+        reviews: reviews.map((review) => ({
+          reviewId: review._id,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: review.createdAt,
+          user: review.user,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching tutor profile:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 export {
   updateTutorProfile,
   currentTutor,
@@ -389,4 +455,6 @@ export {
   verifyTokenResetPassword,
   resetPassword,
   resendToken,
+  changePassword,
+  getTutorProfile,
 };

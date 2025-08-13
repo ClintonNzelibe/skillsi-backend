@@ -21,6 +21,8 @@ export interface ITutor extends Document {
     facebook?: string;
   };
   rating?: number;
+  totalStudents?: number;
+  totalReviews?: number;
   totalRevenue?: number;
   totalCourses?: number;
   numberOfEdits?: number;
@@ -124,10 +126,23 @@ const TutorSchema: Schema = new Schema(
       type: Number,
       default: 0,
     },
+    totalStudents: {
+      type: Number,
+      default: 0,
+    },
+    totalReview: {
+      type: Number,
+      default: 0,
+    },
+    totalRevenue: {
+      type: Number,
+      default: 0,
+    },
     totalCourses: {
       type: Number,
       default: 0,
     },
+
     isProfileComplete: {
       type: Boolean,
       default: false,
@@ -149,6 +164,10 @@ const TutorSchema: Schema = new Schema(
       default: 0,
     },
     numberOfEdits: { type: Number, default: 0 },
+    totalEnrollments: {
+      type: Number,
+      default: 0,
+    },
     verificationToken: { type: String },
     verificationTokenExpirationDate: { type: Date },
     verified: { type: Date, default: Date.now },

@@ -55,14 +55,14 @@ const createNotification = async (
 };
 
 // FETCH NOTIFICATIONS
-const fetchNotifications = async (
+const fetchAllNotifications = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   try {
     const userId = req.user?.userId;
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.page as string) || 50;
+    const limit = parseInt(req.query.limit as string) || 50;
     const skip = (page - 1) * limit;
 
     const notifications = await Notification.find({
@@ -202,7 +202,7 @@ const markAllNotificationsAsRead = async (
 
 export {
   createNotification,
-  fetchNotifications,
+  fetchAllNotifications,
   getSingleNotification,
   markANotificationAsRead,
   markAllNotificationsAsRead,

@@ -4,7 +4,9 @@ interface INotificationToken extends Document {
   user: mongoose.Types.ObjectId; // Reference to User
   token: string; // Device token
   deviceType?: "android" | "ios" | "web"; // Optional device type
-  updatedAt: Date; // Timestamp for last update
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const NotificationTokenSchema = new mongoose.Schema(
@@ -12,11 +14,17 @@ const NotificationTokenSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: [true, "Please provide user ID"],
     },
-    token: { type: String, required: true },
-    deviceType: { type: String, enum: ["android", "ios", "web"] },
-    updatedAt: { type: Date, default: Date.now },
+    token: {
+      type: String,
+      required: [true, "Please provide user push notification token"],
+    },
+    deviceType: {
+      type: String,
+      enum: ["android", "ios", "web"],
+      default: "android",
+    },
   },
   { timestamps: true }
 );
