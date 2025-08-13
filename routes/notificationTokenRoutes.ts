@@ -10,10 +10,8 @@ import { authenticateUser } from "../middleware/authentication.js";
 
 router
   .route("/addNotificationToken")
-  .post( authenticateUser, addNotificationToken)
+  .post(authenticateUser, addNotificationToken);
 
-router
-  .route("/testSendNotification")
-  .post(testSendNotification);
+router.route("/testSendNotification").post(testSendNotification);
 
 export default router;

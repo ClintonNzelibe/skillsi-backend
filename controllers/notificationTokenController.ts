@@ -1,6 +1,6 @@
 // controllers/notificationController.ts
 import { Request, Response } from "express";
-import NotificationToken from "../models/NotificationToken";
+import NotificationToken from "../models/NotificationToken.js";
 import { StatusCodes } from "http-status-codes";
 import admin from "../utils/firebase.js";
 
