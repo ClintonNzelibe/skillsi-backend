@@ -1,3 +1,11 @@
-import { CourseStatus } from "../constants/enums.js";
+import { CourseStatus } from "./enums.js";
+import {
+  shortenNotificationMessage,
+  generateNotificationPreview,
+} from "./notifications.js";
 
-export { CourseStatus };
+export {
+  CourseStatus,
+  shortenNotificationMessage,
+  generateNotificationPreview,
+};

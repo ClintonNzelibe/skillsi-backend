@@ -1,20 +1,10 @@
 import { Request, Response } from "express";
 import Notification from "../models/Notification.js"; // Adjust path
 import { StatusCodes } from "http-status-codes";
-
-// utils/shortenMessage.ts
-const shortenNotificationMessage = (
-  notifications: any[],
-  length: number = 30
-) => {
-  return notifications.map((notification) => ({
-    ...notification.toObject(),
-    message:
-      notification.message.length > length
-        ? notification.message.substring(0, length) + "..."
-        : notification.message,
-  }));
-};
+import {
+//   shortenNotificationMessage,
+  generateNotificationPreview,
+} from "../constants/index.js";
 
 // CREATE NOTIFICATION
 const createNotification = async (
@@ -22,19 +12,31 @@ const createNotification = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { title, message, recipient, type } = req.body;
+    const { title, messageHtml, isHtml, ctaUrl, meta, user, type } = req.body;
 
-    if (!title || !message || !recipient) {
+    if (
+      !title ||
+      !messageHtml ||
+      typeof isHtml !== "boolean" ||
+      !type ||
+      !user
+    ) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Title, message, and recipient are required",
+        message: "All fields are required",
       });
     }
 
+    const messageText = generateNotificationPreview(messageHtml, 30);
+
     const notification = await Notification.create({
       title,
-      message,
-      recipient,
+      messageText,
+      messageHtml,
+      isHtml,
+      ctaUrl,
+      meta,
+      user,
       type,
     });
 
@@ -68,7 +70,7 @@ const fetchNotifications = async (
     })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit).select("title messageText isHtml status type user createdAt");
 
     const totalCount = await Notification.countDocuments({
       user: userId,
@@ -76,15 +78,15 @@ const fetchNotifications = async (
     const totalPages = Math.ceil(totalCount / limit);
 
     // Shorten messages before sending
-    const shortenedNotifications = shortenNotificationMessage(
-      notifications,
-      30
-    );
+    // const shortenedNotifications = shortenNotificationMessage(
+    //   notifications,
+    //   30
+    // );
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Notifications fetched successfully",
-      notifications: shortenedNotifications,
+      notifications,
       page,
       totalNotificationsPerPage: notifications.length,
       totalPages,
@@ -140,7 +142,10 @@ const getSingleNotification = async (
 };
 
 // MARK SINGLE NOTIFICATION AS READ
-const markAsRead = async (req: Request, res: Response): Promise<any> => {
+const markANotificationAsRead = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { notificationId } = req.params;
 
@@ -171,7 +176,10 @@ const markAsRead = async (req: Request, res: Response): Promise<any> => {
 };
 
 // MARK ALL NOTIFICATIONS AS READ
-const markAllAsRead = async (req: Request, res: Response): Promise<any> => {
+const markAllNotificationsAsRead = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const userId = req.user?.userId;
     await Notification.updateMany(
@@ -196,6 +204,6 @@ export {
   createNotification,
   fetchNotifications,
   getSingleNotification,
-  markAsRead,
-  markAllAsRead,
+  markANotificationAsRead,
+  markAllNotificationsAsRead,
 };

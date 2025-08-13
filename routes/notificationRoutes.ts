@@ -5,8 +5,8 @@ import {
   createNotification,
   fetchNotifications,
   getSingleNotification,
-  markAsRead,
-  markAllAsRead,
+  markANotificationAsRead,
+  markAllNotificationsAsRead,
 } from "../controllers/notificationController.js";
 
 import { authenticateUser } from "../middleware/authentication.js";
@@ -16,7 +16,7 @@ router
   .post(createNotification)
   .get(authenticateUser, fetchNotifications);
 router.route("/:notificationId").get(authenticateUser, getSingleNotification);
-router.route("/read/:notificationId").patch(authenticateUser, markAsRead);
-router.route("/read-all/").patch(authenticateUser, markAllAsRead);
+router.route("/read/:notificationId").patch(authenticateUser, markANotificationAsRead);
+router.route("/read-all").patch(authenticateUser, markAllNotificationsAsRead);
 
 export default router;
