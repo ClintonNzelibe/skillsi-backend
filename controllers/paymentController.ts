@@ -5,11 +5,122 @@ import Course from "../models/Course.js";
 import PurchasedCourse from "../models/PurchasedCourse.js";
 import PaymentHistory from "../models/PaymentHistory.js";
 import axios from "axios";
+import crypto from "crypto";
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
+const PAYSTACK_SECRET_KEY =
+  process.env.NODE_ENV === "production"
+    ? process.env.PAYSTACK_SECRET_LIVE_KEY
+    : process.env.PAYSTACK_SECRET_TEST_KEY || "";
 
 const displayCard = (last4: string, bin: string) => {
   return `${bin.slice(0, 4)} **** **** **** ${last4}`;
+};
+
+const initializePayment = async (
+  id: string,
+  email: string,
+  amount: number,
+  purpose: string,
+  callbackPath: string,
+  extraMetadata: Record<string, any> = {}
+): Promise<{ authorization_url: string; reference: string }> => {
+  if (!email || !amount || !purpose) {
+    throw new Error("Email, amount, and purpose are required");
+  }
+
+  const amountInKobo = amount * 100; // Paystack expects kobo
+
+  const response = await axios.post(
+    "https://api.paystack.co/transaction/initialize",
+    {
+      email,
+      amount: amountInKobo,
+      callback_url: `${process.env.CLIENT_URL}${
+        callbackPath || "/payment/callback"
+      }`,
+      metadata: {
+        id,
+        purpose,
+        ...extraMetadata, // can include courseId, tutorId, etc.
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const { authorization_url, reference } = response.data.data;
+
+  return { authorization_url, reference };
+};
+
+const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const secret = process.env.PAYSTACK_SECRET_KEY || "";
+
+    // Verify webhook signature
+    const hash = crypto
+      .createHmac("sha512", secret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+    if (hash !== req.headers["x-paystack-signature"]) {
+      return res.status(401).send("Invalid signature");
+    }
+
+    const event = req.body;
+    if (event.event === "charge.success") {
+      const metadata = event.data.metadata;
+      const purpose = metadata?.purpose;
+
+      if (purpose === "card_tokenization") {
+        const userId = metadata.id;
+        const priceInKobo = 100 * 100; // ₦100 in kobo
+        const reference = event.data.reference;
+
+        const existingPaymentMethods = await PaymentMethod.find({
+          user: userId,
+        });
+        const isFirstPaymentMethod = existingPaymentMethods.length === 0;
+
+        // Tokenize card
+        const {
+          transactionId,
+          authorizationCode,
+          bin,
+          lastFour,
+          expMonth,
+          expYear,
+          bank,
+          cardType,
+        } = await verifyAndTokenizeCard(reference, priceInKobo, userId);
+
+        await PaymentMethod.create({
+          user: userId,
+          authorizationCode,
+          bin,
+          lastFour,
+          expMonth,
+          expYear,
+          bank,
+          cardType,
+          isDefault: isFirstPaymentMethod,
+        });
+
+        console.log(`Card tokenized for user ${userId}`);
+      }
+
+      // You can handle other purposes here, e.g., course_purchase, wallet_topup, etc.
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.sendStatus(500);
+  }
 };
 
 const verifyAndTokenizeCard = async (
@@ -81,62 +192,26 @@ const verifyAndTokenizeCard = async (
 
 const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { reference } = req.body;
     const userId = req.user?.userId;
+    const email = req.user?.email;
 
-    if (!reference) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "All field are required." });
-    }
+    // Always charge ₦100 for tokenization
+    const amount = 100;
 
-    // Check if this is the user's first payment method
-    const existingPaymentMethods = await PaymentMethod.find({ user: userId });
-    const isFirstPaymentMethod = existingPaymentMethods.length === 0;
-
-    const priceInKobo = 100 * 100;
-
-    const {
-      transactionId,
-      authorizationCode,
-      bin,
-      lastFour,
-      expMonth,
-      expYear,
-      bank,
-      cardType,
-    } = await verifyAndTokenizeCard(reference, priceInKobo, userId || "");
-
-    const paymentMethod = {
-      user: userId,
-      authorizationCode,
-      bin,
-      lastFour,
-      expMonth,
-      expYear,
-      bank,
-      cardType,
-      isDefault: isFirstPaymentMethod,
-    };
-
-    await PaymentMethod.create(paymentMethod);
-
-    await axios.post(
-      `https://api.paystack.co/refund`,
-      {
-        transaction: transactionId,
-        amount: 10000,
-      },
-      {
-        headers: {
-          Authorization: `Bearer $PAYSTACK_SECRET_KEY}`,
-        },
-      }
+    // Initialize payment for tokenization
+    const { authorization_url, reference } = await initializePayment(
+      userId!,
+      email!,
+      amount,
+      "card_tokenization",
+      "/payment/callback",
+      {}
     );
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Payment method added successfully.",
+      authorization_url,
+      reference,
     });
   } catch (error) {
     console.error("Error adding payment method:", error);
@@ -386,6 +461,7 @@ const getSinglePaymentHistoryUser = async (
 };
 
 export {
+  paystackWebhook,
   addPaymentMethod,
   setDefaultPaymentMethod,
   deletePaymentMethod,

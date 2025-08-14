@@ -243,7 +243,9 @@ const fetchAllCoursesUser = async (
 
     // Category filter
     if (category) {
-      filter.$and.push({ category: new mongoose.Types.ObjectId(category as string) });
+      filter.$and.push({
+        category: new mongoose.Types.ObjectId(category as string),
+      });
       // filter.$and.push({
       //   category: { $regex: new RegExp(category as string, "i") },
       // });
@@ -522,6 +524,78 @@ const fetchSingleCourseTutor = async (
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, messgae: "Internal Server Error" });
+  }
+};
+
+const fetchAllCoursesAffiliate = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { search } = req.query;
+
+    const affiliateId = req.affiliate?.affiliateId;
+    if (!affiliateId) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Unauthorized: Affiliate ID missing",
+      });
+    }
+
+    let filter: any = { allowAffiliate: true };
+
+    const andFilters: any[] = [];
+
+    if (search) {
+      andFilters.push({
+        $or: [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    if (andFilters.length === 0) {
+      filter.$and = andFilters;
+    }
+
+    const courses = await Course.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .populate(
+        "tutor",
+        "fName lName email profileImage totalStudent totalReviews totalCourses"
+      )
+      .select("-totalEarnings -totalAffiliate -totalEnrollments");
+
+    if (!courses || courses.length === 0) {
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: "No courses found",
+        courses: [],
+      });
+    }
+
+    const totalCoursesCount = await Course.countDocuments(filter);
+    const totalPages = Math.ceil(totalCoursesCount / limit);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Fetched successfully",
+      courses,
+      page,
+      totalCoursePerPage: courses.length,
+      totalPages,
+      totalCourses: totalCoursesCount,
+    });
+  } catch (error) {
+    console.error("Error fetching affiliate courses", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 

@@ -3,6 +3,7 @@ import {
   AdminJwtPayload,
   JwtPayload,
   TokenAdminPayload,
+  TokenAffiliate,
   TokenPayload,
   TokenTutorPayload,
   TutorJwtPayload,
@@ -65,6 +66,26 @@ const createAdminJWT = ({
   return token;
 };
 
+const createAffiliateJWT = ({
+  affiliateId,
+  email,
+  firstName,
+  lastName,
+  userName,
+}: TokenAffiliate): string => {
+  const payload: TokenAffiliate = {
+    affiliateId,
+    email,
+    firstName,
+    lastName,
+    userName,
+  };
+  const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
+    expiresIn: process.env.JWT_LIFETIME as any,
+  });
+  return token;
+};
+
 const isTokenValid = ({ token }: Token): TokenPayload | false => {
   try {
     const decoded = jwt.verify(
@@ -86,6 +107,7 @@ export {
   createUserJWT,
   createTutorJWT,
   createAdminJWT,
+  createAffiliateJWT,
   isTokenValid,
   attachCookiesToResponse,
 };

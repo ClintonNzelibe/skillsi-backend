@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { UnAuthenticatedError, UnauthorizedError } from "../errors/index.js";
 import { isTokenValid } from "../utils/index.js";
-import { TokenTutorPayload } from "../type.js";
+import { TokenAffiliatePayload, TokenTutorPayload } from "../type.js";
 
 // Define the base token payload interface
 interface BaseTokenPayload {
@@ -33,6 +33,7 @@ declare global {
       user?: UserTokenPayload;
       tutor?: TokenTutorPayload;
       admin?: AdminTokenPayload;
+      affiliate?: TokenAffiliatePayload;
     }
   }
 }
@@ -184,6 +185,58 @@ const authenticateAdmin = async (
   }
 };
 
+const authenticateAffiliate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    throw new UnAuthenticatedError("Authentication invalid");
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    throw new UnAuthenticatedError("Authentication invalid");
+  }
+
+  try {
+    const result = isTokenValid({ token });
+
+    // Type guard function to check if payload is TokenAffiliatePayload
+    const isAffiliatePayload = (
+      payload: any
+    ): payload is TokenAffiliatePayload => {
+      return (
+        payload !== null &&
+        typeof payload === "object" &&
+        "affiliateId" in payload &&
+        "email" in payload &&
+        "firstName" in payload &&
+        "lastName" in payload &&
+        "userName" in payload
+      );
+    };
+
+    if (!result || typeof result === "boolean" || !isAffiliatePayload(result)) {
+      throw new UnAuthenticatedError("Authentication invalid");
+    }
+
+    const { affiliateId, email, firstName, lastName, userName } = result;
+    req.affiliate = {
+      affiliateId,
+      email,
+      firstName,
+      lastName,
+      userName,
+    };
+    next();
+  } catch (error) {
+    throw new UnAuthenticatedError("Authentication Invalid");
+  }
+};
+
 const authorizePermissions = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.admin || !req.admin.role) {
@@ -231,6 +284,7 @@ export {
   authenticateUser,
   authenticateTutor,
   authenticateAdmin,
+  authenticateAffiliate,
   authorizePermissions,
   authenticateUserOrTutorOrAdmin,
 };

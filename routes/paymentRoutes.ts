@@ -4,6 +4,7 @@ const router = Router();
 import { authenticateUser } from "../middleware/authentication.js";
 
 import {
+  paystackWebhook,
   addPaymentMethod,
   setDefaultPaymentMethod,
   deletePaymentMethod,
@@ -14,8 +15,10 @@ import {
 } from "../controllers/paymentController.js";
 
 // Get all payment methods
+router.route("/webhook").post(paystackWebhook);
+
 router
-  .route("/")
+  .route("/addPaymentMethod")
   .post(authenticateUser, addPaymentMethod)
   .get(authenticateUser, getAllPaymentMethods);
 

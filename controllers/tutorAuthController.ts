@@ -197,6 +197,13 @@ const signinTutor = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Please provide all values",
+      });
+    }
+
     const tutor = await Tutor.findOne({ email }).select("+password");
     if (!tutor) {
       return res.status(StatusCodes.UNAUTHORIZED).json({

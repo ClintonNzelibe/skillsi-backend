@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import Tutor from "../models/Tutor.js";
-import Course from "../models/Course.js";
-import TutorReview from "../models/TutorReview.js";
+import Affiliate from "../models/Affiliate.js";
 import {
   DeleteFileFromCloudinary,
   PasswordValidation,
@@ -11,25 +9,24 @@ import {
 } from "../helpers/index.js";
 import { createHash, sendResetPasswordEmail } from "../utils/index.js";
 
-const updateTutorProfile = async (
+const updateAffiliateProfile = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   try {
-    const { fName, lName, bio, expertise, profilePicture, socialLinks } =
-      req.body;
+    const { firstName, lastName, profilePicture, phoneNumber } = req.body;
 
-    const tutorId = req.tutor?.tutorId;
+    const affiliateId = req.affiliate?.affiliateId;
 
-    if (!tutorId) {
+    if (!affiliateId) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: "Unauthorized Tutor",
       });
     }
 
-    const tutor = await Tutor.findById(tutorId);
-    if (!tutor) {
+    const affiliate = await Affiliate.findById(affiliateId);
+    if (!affiliate) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: "Tutor not found with this email",
@@ -39,8 +36,8 @@ const updateTutorProfile = async (
     // Upload new profile picture if provided and different from existing
     if (profilePicture && profilePicture.startsWith("data:")) {
       // Delete existing image if it exists
-      if (tutor.profilePicture) {
-        await DeleteFileFromCloudinary(tutor.profilePicture);
+      if (affiliate.profilePicture) {
+        await DeleteFileFromCloudinary(affiliate.profilePicture);
       }
 
       const uploadResult = await UploadFileToCloudinary(
@@ -53,43 +50,39 @@ const updateTutorProfile = async (
         res
       );
 
-      tutor.profilePicture = uploadResult?.secure_url;
+      affiliate.profilePicture = uploadResult?.secure_url;
     }
 
     // Fields allowed to be updated
-    if (fName !== undefined) tutor.fName = fName;
-    if (lName !== undefined) tutor.lName = lName;
-    if (bio !== undefined) tutor.bio = bio;
-    if (expertise !== undefined) tutor.expertise = expertise;
-    if (socialLinks !== undefined) tutor.socialLinks = socialLinks;
+    if (firstName !== undefined) affiliate.firstName = firstName;
+    if (lastName !== undefined) affiliate.lastName = lastName;
 
-    tutor.isProfileComplete = !!(
-      fName &&
-      lName &&
-      tutor.bio &&
-      tutor.expertise?.length &&
-      tutor.profilePicture
+    if (phoneNumber !== undefined) affiliate.phoneNumber = phoneNumber;
+
+    affiliate.isProfileComplete = !!(
+      firstName &&
+      lastName &&
+      affiliate.profilePicture &&
+      affiliate.phoneNumber
     );
 
-    await tutor.save();
+    await affiliate.save();
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Tutor profile updated successfully",
-      tutor: {
-        affiliateId: tutor._id,
-        fName: tutor.fName,
-        lName: tutor.lName,
-        email: tutor.email,
-        bio: tutor.bio,
-        expertise: tutor.expertise,
-        profilePicture: tutor.profilePicture,
-        socialLinks: tutor.socialLinks,
-        isProfileComplete: tutor.isProfileComplete,
+      message: "Affiliate profile updated successfully",
+      affiliate: {
+        affiliateId: affiliate._id,
+        firstName: affiliate.firstName,
+        lastName: affiliate.lastName,
+        email: affiliate.email,
+        profilePicture: affiliate.profilePicture,
+        phoneNumber: affiliate.phoneNumber,
+        isProfileComplete: affiliate.isProfileComplete,
       },
     });
   } catch (error) {
-    console.error("Error updating tutor profile", error);
+    console.error("Error updating affiliate profile", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal Server Error",
@@ -97,35 +90,33 @@ const updateTutorProfile = async (
   }
 };
 
-const currentTutor = async (req: Request, res: Response): Promise<any> => {
+const currentAffiliate = async (req: Request, res: Response): Promise<any> => {
   try {
-    const tutor = await Tutor.findOne({ _id: req.tutor?.tutorId });
+    const affiliate = await Affiliate.findOne({
+      _id: req.affiliate?.affiliateId,
+    });
 
-    if (!tutor) {
+    if (!affiliate) {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json({ success: false, message: "Tutor doesn't exist" });
+        .json({ success: false, message: "Affiliate doesn't exist" });
     }
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Fetched Succesfully",
-      tutor: {
-        tutorId: tutor._id,
-        fName: tutor.fName,
-        lName: tutor.lName,
-        email: tutor.email,
-        profilePicture: tutor.profilePicture,
-        socialLinks: tutor.socialLinks,
-        bio: tutor.bio,
-        expertise: tutor.expertise,
-        isProfileComplete: tutor.isProfileComplete,
-        totalCourses: tutor.totalCourses,
-        rating: tutor.rating,
+      affiliate: {
+        affiliateId: affiliate._id,
+        firstName: affiliate.firstName,
+        lastName: affiliate.lastName,
+        email: affiliate.email,
+        profilePicture: affiliate.profilePicture,
+        phoneNumber: affiliate.phoneNumber,
+        isProfileComplete: affiliate.isProfileComplete,
       },
     });
   } catch (error) {
-    console.error("Error getting current tutor", error);
+    console.error("Error getting current affiliate", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal Server Error",
@@ -144,8 +135,8 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Please provide valid email" });
     }
 
-    const tutor = await Tutor.findOne({ email });
-    if (!tutor) {
+    const affiliate = await Affiliate.findOne({ email });
+    if (!affiliate) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Email doesn't exist" });
@@ -159,19 +150,19 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
     } = await TokenGenerator();
 
     await sendResetPasswordEmail({
-      fName: tutor.fName,
-      email: tutor.email,
+      fName: affiliate.firstName,
+      email: affiliate.email,
       verificationToken,
     });
 
-    tutor.resetToken = finalVerificationToken;
-    tutor.resetTokenExpirationDate = verificationTokenExpirationDate;
-    await tutor.save();
+    affiliate.resetToken = finalVerificationToken;
+    affiliate.resetTokenExpirationDate = verificationTokenExpirationDate;
+    await affiliate.save();
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Please check your email for OTP",
-      email: tutor.email,
+      email: affiliate.email,
     });
   } catch (error) {
     console.error("Error resetting password:", error);
@@ -193,9 +184,9 @@ const verifyTokenResetPassword = async (
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Please provide all values" });
     }
-    const tutor = await Tutor.findOne({ email });
+    const affiliate = await Affiliate.findOne({ email });
 
-    if (!tutor) {
+    if (!affiliate) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Email doesn't exist" });
@@ -204,13 +195,13 @@ const verifyTokenResetPassword = async (
     const currentDate = new Date();
 
     if (
-      tutor.resetToken === createHash(verificationToken) &&
-      tutor.resetTokenExpirationDate > currentDate
+      affiliate.resetToken === createHash(verificationToken) &&
+      affiliate.resetTokenExpirationDate > currentDate
     ) {
-      tutor.isResetTokenVerified = true;
-      tutor.resetToken = "";
-      tutor.resetTokenExpirationDate = new Date();
-      await tutor.save();
+      affiliate.isResetTokenVerified = true;
+      affiliate.resetToken = "";
+      affiliate.resetTokenExpirationDate = new Date();
+      await affiliate.save();
 
       res
         .status(StatusCodes.OK)
@@ -253,22 +244,23 @@ const resetPassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Password doesn't match" });
     }
 
-    const tutor = await Tutor.findOne({ email }).select("+password");
-    if (!tutor) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ success: false, message: "Tutor not found with this email" });
+    const affiliate = await Affiliate.findOne({ email }).select("+password");
+    if (!affiliate) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Affiliate not found with this email",
+      });
     }
 
-    if (!tutor.isResetTokenVerified) {
+    if (!affiliate.isResetTokenVerified) {
       return res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Please verify your email" });
     }
 
-    tutor.password = newPassword;
-    tutor.isResetTokenVerified = true;
-    await tutor.save();
+    affiliate.password = newPassword;
+    affiliate.isResetTokenVerified = true;
+    await affiliate.save();
 
     res
       .status(StatusCodes.OK)
@@ -291,9 +283,9 @@ const resendToken = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Please provide valid email" });
     }
 
-    const tutor = await Tutor.findOne({ email });
+    const affiliate = await Affiliate.findOne({ email });
 
-    if (!tutor) {
+    if (!affiliate) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Email doesn't exist" });
@@ -307,19 +299,19 @@ const resendToken = async (req: Request, res: Response): Promise<any> => {
     } = await TokenGenerator();
 
     await sendResetPasswordEmail({
-      fName: tutor.fName,
+      fName: affiliate.firstName,
       email,
       verificationToken,
     });
 
-    tutor.resetToken = finalVerificationToken;
-    tutor.resetTokenExpirationDate = verificationTokenExpirationDate;
-    await tutor.save();
+    affiliate.resetToken = finalVerificationToken;
+    affiliate.resetTokenExpirationDate = verificationTokenExpirationDate;
+    await affiliate.save();
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: "OTP sent, please kindly check your email",
-      email: tutor.email,
+      email: affiliate.email,
     });
   } catch (error) {
     console.error("Error resending token:", error);
@@ -339,16 +331,19 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Please provide all values" });
     }
 
-    const email = req.tutor?.email;
+    const email = req.affiliate?.email;
 
-    const tutor = await Tutor.findOne({ email }).select("+password");
-    if (!tutor) {
+    const affiliate = await Affiliate.findOne({ email }).select("+password");
+    if (!affiliate) {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json({ success: false, message: "Tutor not found with this email" });
+        .json({
+          success: false,
+          message: "Affiliate not found with this email",
+        });
     }
 
-    const isPasswordCorrect = await tutor.comparePassword(password);
+    const isPasswordCorrect = await affiliate.comparePassword(password);
     if (!isPasswordCorrect) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
@@ -371,8 +366,8 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Password doesn't match" });
     }
 
-    tutor.password = newPassword;
-    await tutor.save();
+    affiliate.password = newPassword;
+    await affiliate.save();
 
     res
       .status(StatusCodes.OK)
@@ -385,77 +380,12 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-/**
- * Get tutor profile details
- */
-const getTutorProfile = async (req: Request, res: Response): Promise<any> => {
-  try {
-    const { tutorId } = req.params;
-
-    // Fetch tutor details without sensitive fields
-    const tutor = await Tutor.findById(tutorId)
-      .select(
-        "fName lName bio totalStudents totalReview socialLinks profilePicture expertise rating"
-      )
-      .lean();
-
-    if (!tutor) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: "Tutor not found",
-      });
-    }
-
-    // Fetch tutor's courses
-    const courses = await Course.find({ tutor: tutorId })
-      .select("title description bannerImage rating totalReview _id")
-      .lean();
-
-    // Fetch tutor reviews (latest first)
-    const reviews = await TutorReview.find({ tutor: tutorId })
-      .populate("user", "fName lName profilePicture")
-      .select("rating comment user createdAt")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Tutor profile fetched successfully",
-      tutor: {
-        ...tutor,
-        courses: courses.map((course) => ({
-          courseId: course._id,
-          title: course.title,
-          description: course.description,
-          bannerImage: course.bannerImage,
-          rating: course.rating,
-          totalReview: course.totalReview,
-        })),
-        reviews: reviews.map((review) => ({
-          reviewId: review._id,
-          rating: review.rating,
-          comment: review.comment,
-          createdAt: review.createdAt,
-          user: review.user,
-        })),
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching tutor profile:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
 export {
-  updateTutorProfile,
-  currentTutor,
+  updateAffiliateProfile,
+  currentAffiliate,
   forgotPassword,
   verifyTokenResetPassword,
   resetPassword,
   resendToken,
   changePassword,
-  getTutorProfile,
 };

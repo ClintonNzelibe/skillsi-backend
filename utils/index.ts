@@ -2,6 +2,7 @@ import {
   createUserJWT,
   createTutorJWT,
   createAdminJWT,
+  createAffiliateJWT,
   isTokenValid,
   attachCookiesToResponse,
 } from "./jwt.js";
@@ -14,6 +15,7 @@ import {
 import createTokenUser from "./createTokenUser.js";
 import createTokenTutor from "./createTokenTutor.js";
 import createTokenAdmin from "./createTokenAdmin.js";
+import createTokenAffiliate from "./createTokenAffiliate.js";
 import checkPermissions from "./checkPermissions.js";
 import sendVerificationEmail from "./sendVerificationEmail.js";
 import sendPasswordEmail from "./sendPasswordEmail.js";
@@ -24,6 +26,7 @@ export {
   createUserJWT,
   createTutorJWT,
   createAdminJWT,
+  createAffiliateJWT,
   isTokenValid,
   attachCookiesToResponse,
   OPENAI_API_KEY,
@@ -33,6 +36,7 @@ export {
   createTokenUser,
   createTokenTutor,
   createTokenAdmin,
+  createTokenAffiliate,
   checkPermissions,
   sendVerificationEmail,
   sendPasswordEmail,

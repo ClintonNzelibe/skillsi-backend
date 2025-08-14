@@ -9,7 +9,7 @@ export interface INotification extends Document {
   meta?: Record<string, any>;
   user: mongoose.Types.ObjectId; // User or Admin ID
   status: "read" | "unread";
-  type?: string;
+  type?: "system" | "course" | "payment" | "other" | string;
 }
 
 const NotificationSchema: Schema = new Schema(

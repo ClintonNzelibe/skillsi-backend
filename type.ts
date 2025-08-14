@@ -87,3 +87,36 @@ export interface AdminJwtPayload {
   email: string;
   role: string;
 }
+
+// Affiliate types
+export interface Affiliate {
+  affiliateId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+}
+
+export interface TokenAffiliate {
+  affiliateId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+}
+
+export interface TokenAffiliatePayload {
+  affiliateId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+}
+
+export interface AffiliateJwtPayload {
+  affiliateId: string;
+  firstName: string;
+  lastName: string;
+  userName: string;
+  email: string;
+}

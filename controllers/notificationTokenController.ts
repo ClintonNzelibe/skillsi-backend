@@ -114,7 +114,7 @@ const testSendNotification = async (
     console.error("Error in testSendNotification:", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Internal server error" });
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
