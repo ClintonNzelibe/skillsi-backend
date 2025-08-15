@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import swagger from "./swagger.json" with { type: 'json' };
 
-import bodyParser from "body-parser";
+// import bodyParser from "body-parser";
 
 import { AgendaSetup } from './services/index.js';
 
@@ -59,7 +59,7 @@ import { paystackWebhook } from "./controllers/paymentController.js";
 
 const connectionString = process.env.MONGO_URL || "";
 
-
+// Paystack webhook route (must be BEFORE express.json())
 app.post(
   "/api/v1/payment/webhook",
   express.raw({ type: "application/json" }),
@@ -81,12 +81,12 @@ app.use(express.json({ limit: "100000000mb" }));
 app.use(express.json());
 
 // Middleware to parse JSON and raw body for webhooks
-app.use(bodyParser.json()); // For JSON payloads
-app.use(
-  bodyParser.raw({
-    type: "application/json", // Only parse JSON payloads
-  })
-);
+// app.use(bodyParser.json()); // For JSON payloads
+// app.use(
+//   bodyParser.raw({
+//     type: "application/json", // Only parse JSON payloads
+//   })
+// );
 
 app.use(express.urlencoded({ limit: "100000000mb", extended: true }));
 

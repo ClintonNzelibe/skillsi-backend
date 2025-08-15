@@ -104,7 +104,9 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
         .json({ success: false, message: "Invalid signature" });
     }
 
-    const event = req.body;
+    // Parse JSON payload after verifying signature
+    const event = JSON.parse(payload.toString());
+    console.log("Received Paystack event:", event);
     console.log("Received Paystack event:", event);
     console.log("Event type:", event.event);
     console.log("Event data:", event.data);
