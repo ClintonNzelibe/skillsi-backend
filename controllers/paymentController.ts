@@ -59,11 +59,11 @@ const initializePayment = async (
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
   try {
-    const secret = PAYSTACK_SECRET_KEY || "";
+    const secret = PAYSTACK_SECRET_KEY
 
     // Verify webhook signature
     const hash = crypto
-      .createHmac("sha512", secret)
+      .createHmac("sha512", secret!)
       .update(JSON.stringify(req.body))
       .digest("hex");
 

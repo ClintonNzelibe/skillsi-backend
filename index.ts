@@ -11,6 +11,8 @@ import mongoose from "mongoose";
 import swaggerUi from "swagger-ui-express";
 import swagger from "./swagger.json" with { type: 'json' };
 
+import bodyParser from "body-parser";
+
 import { AgendaSetup } from './services/index.js';
 
 
@@ -49,7 +51,20 @@ import categoryRouter from "./routes/categoryRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import notificationTokenRouter from "./routes/notificationTokenRoutes.js";
 
+
+//webhook controller
+import { paystackWebhook } from "./controllers/paymentController.js";
+
+
+
 const connectionString = process.env.MONGO_URL || "";
+
+
+app.post(
+  "/api/v1/payment/webhook",
+  express.raw({ type: "application/json" }),
+  paystackWebhook
+);  
 
 // Middleware setup
 if (process.env.NODE_ENV !== "production") {
@@ -63,7 +78,18 @@ app.set('agenda', agenda);
 
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "100000000mb" }));
+app.use(express.json());
+
+// Middleware to parse JSON and raw body for webhooks
+app.use(bodyParser.json()); // For JSON payloads
+app.use(
+  bodyParser.raw({
+    type: "application/json", // Only parse JSON payloads
+  })
+);
+
 app.use(express.urlencoded({ limit: "100000000mb", extended: true }));
+
 app.use(xss());
 app.use(mongoSanitize());
 
