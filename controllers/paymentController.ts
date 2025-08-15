@@ -59,7 +59,7 @@ const initializePayment = async (
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
   try {
-    const secret = process.env.PAYSTACK_SECRET_KEY || "";
+    const secret = PAYSTACK_SECRET_KEY || "";
 
     // Verify webhook signature
     const hash = crypto

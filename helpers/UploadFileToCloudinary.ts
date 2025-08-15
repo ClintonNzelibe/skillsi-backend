@@ -26,7 +26,7 @@ const UploadFileToCloudinary = async (
     if (!fileData) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        msg: "No file data provided",
+        message: "No file data provided",
       });
     }
 
@@ -49,7 +49,7 @@ const UploadFileToCloudinary = async (
       if (!options.allowedFileTypes.includes(mimeType)) {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
-          msg: `Invalid file type. Allowed: ${options.allowedFileTypes.join(
+          message: `Invalid file type. Allowed: ${options.allowedFileTypes.join(
             ", "
           )}`,
         });
@@ -62,7 +62,7 @@ const UploadFileToCloudinary = async (
       if (buffer.length > maxBytes) {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
-          msg: `File size exceeds limit of ${options.maxSizeInMB}MB`,
+          message: `File size exceeds limit of ${options.maxSizeInMB}MB`,
         });
       }
     }
@@ -82,7 +82,7 @@ const UploadFileToCloudinary = async (
   } catch (error: any) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      msg: "Cloudinary upload failed",
+      message: "Cloudinary upload failed",
       error: error?.message || "Unknown error",
     });
   }
