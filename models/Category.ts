@@ -11,7 +11,7 @@ const CategorySchema: Schema<ICategory> = new Schema(
     name: {
       type: String,
       required: [true, "Please provide category name"],
-      unique: true, // ensures no duplicates
+      // unique: true, // ensures no duplicates
       trim: true,
       lowercase: true, // keeps stored name consistent
     },

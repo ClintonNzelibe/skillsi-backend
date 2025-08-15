@@ -27,6 +27,9 @@ const initializePayment = async (
   if (!email || !amount || !purpose) {
     throw new Error("Email, amount, and purpose are required");
   }
+  const callback_url = `${process.env.CLIENT_URL}${
+    callbackPath || "/payment/callback"
+  }`;
 
   const amountInKobo = amount * 100; // Paystack expects kobo
 
@@ -35,9 +38,8 @@ const initializePayment = async (
     {
       email,
       amount: amountInKobo,
-      callback_url: `${process.env.CLIENT_URL}${
-        callbackPath || "/payment/callback"
-      }`,
+      callback_url,
+      channels: ["card"],
       metadata: {
         id,
         purpose,
@@ -72,7 +74,10 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     if (!secret) {
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ success: false, message: "Paystack secret key not configured" });
+        .json({
+          success: false,
+          message: "Paystack secret key not configured",
+        });
     }
     if (!payload) {
       return res
@@ -84,7 +89,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Payload must be a Buffer" });
     }
-    
+
     // Verify webhook signature
     const hash = crypto
       .createHmac("sha512", secret!)
