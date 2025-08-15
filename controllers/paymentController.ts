@@ -72,15 +72,15 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
 
     const sig = req.headers["x-paystack-signature"] as string;
     // With express.raw middleware, req.body should already be a Buffer
-    
+
     if (!sig) {
       return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ success: false, message: "Missing Stripe Signature" });
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Missing Stripe Signature" });
     }
 
     const payload = req.body;
-    
+
     if (!payload) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -105,6 +105,12 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     }
 
     const event = req.body;
+    console.log("Received Paystack event:", event);
+    console.log("Event type:", event.event);
+    console.log("Event data:", event.data);
+    console.log("Event metadata:", event.data.metadata);
+    console.log("Event reference:", event.data.reference);
+    // Handle the event based on its type
     if (event.event === "charge.success") {
       const metadata = event.data.metadata;
       const purpose = metadata?.purpose;
@@ -205,6 +211,8 @@ const verifyAndTokenizeCard = async (
   if (!authorization?.reusable) {
     throw new Error("Card not reusable");
   }
+
+  console.log(authorization, transactionId); 
 
   if (authorization.reusable) {
     // Save reusable card authorization_code
