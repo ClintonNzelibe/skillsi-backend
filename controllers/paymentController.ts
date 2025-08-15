@@ -59,15 +59,39 @@ const initializePayment = async (
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
   try {
-    const secret = PAYSTACK_SECRET_KEY
+    const secret = PAYSTACK_SECRET_KEY;
+    const sig = req.headers["stripe-signature"];
+    // With express.raw middleware, req.body should already be a Buffer
+    const payload = req.body;
 
+    if (!sig) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Missing Stripe Signature" });
+    }
+    if (!secret) {
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: "Paystack secret key not configured" });
+    }
+    if (!payload) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Missing payload" });
+    }
+    if (typeof payload === "string" || !Buffer.isBuffer(payload)) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Payload must be a Buffer" });
+    }
+    
     // Verify webhook signature
     const hash = crypto
       .createHmac("sha512", secret!)
-      .update(JSON.stringify(req.body))
+      .update(payload)
       .digest("hex");
 
-    if (hash !== req.headers["x-paystack-signature"]) {
+    if (hash !== sig) {
       return res.status(401).send("Invalid signature");
     }
 
