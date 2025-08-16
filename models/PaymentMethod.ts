@@ -4,7 +4,8 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 // Example Mongoose schema for PaymentMethod
 
 interface PaymentMethodDocument extends Document {
-  user: Types.ObjectId;
+  customer: Types.ObjectId;
+  customerModel: "User" | "Admin" | "Affiliate";
   authorizationCode: string;
   bin: string;
   lastFour: string;
@@ -18,9 +19,15 @@ interface PaymentMethodDocument extends Document {
 
 const PaymentMethodSchema = new Schema<PaymentMethodDocument>(
   {
-    user: {
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      required: [true, "Please provide the user id"],
+      refPath: "customerModel",
+      required: [true, "Please provide the customer id"],
+    },
+    customerModel: {
+      type: String,
+      required: [true, "Please provider customer model"],
+      enum: ["User", "Admin", "Affiliate"], // models it can point to
     },
     authorizationCode: {
       type: String,

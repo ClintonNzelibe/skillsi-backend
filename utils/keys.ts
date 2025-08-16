@@ -6,6 +6,7 @@ export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
 
 export const GOOGLE_DRIVE_APIKEY = process.env.GOOGLE_DRIVE_APIKEY
 
-export const STRIPE_SECRET_KEY = process.env.SECRET_STRIPE_SECRET_KEY || ""
-
-export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ""
+export const PAYSTACK_SECRET_KEY =
+  process.env.NODE_ENV === "production"
+    ? process.env.PAYSTACK_SECRET_LIVE_KEY
+    : process.env.PAYSTACK_SECRET_TEST_KEY || "";

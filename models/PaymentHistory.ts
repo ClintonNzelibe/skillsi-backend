@@ -2,15 +2,16 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IPaymentHistory extends Document {
   customer: Types.ObjectId;
-  course?: Types.ObjectId;
-  transactionType: "card_tokenization"
-    | "course_payment"
-    | "tutor_withdrawal"
-    | "affiliate_withdrawal";
   customerModel: "User" | "Admin" | "Affiliate";
+  course?: Types.ObjectId;
   reference: string;
   type: "credit" | "debit" | "refund";
   transactionId?: string;
+  transactionType:
+    | "card_tokenization"
+    | "course_payment"
+    | "tutor_withdrawal"
+    | "affiliate_withdrawal";
   amount: number;
   currency: "NGN" | "USD" | "EUR" | "GBP";
   status: "pending" | "success" | "failed";
@@ -28,11 +29,11 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       // ref: "User",
       refPath: "customerModel",
-      required: [true, "Please provider user id"],
+      required: [true, "Please provider customer id"],
     },
     customerModel: {
       type: String,
-      required: true,
+      required: [true, "Please provider customer model"],
       enum: ["User", "Admin", "Affiliate"], // models it can point to
     },
     course: {
@@ -54,6 +55,17 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
       type: String,
       required: [true, "Please provide transaction id"],
       trim: true,
+    },
+    transactionType: {
+      type: String,
+      enum: [
+        "card_tokenization",
+        "course_payment",
+        "tutor_withdrawal",
+        "affiliate_withdrawal",
+      ],
+      required: [true, "Please provide transaction type"],
+      default: "course_payment",
     },
     amount: {
       type: Number,
@@ -98,6 +110,22 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
   },
   { timestamps: true }
 );
+
+PaymentHistorySchema.pre<IPaymentHistory>("save", function (next) {
+  if (!this.type) {
+    switch (this.transactionType) {
+      case "course_payment":
+      case "tutor_withdrawal":
+      case "affiliate_withdrawal":
+      case "card_tokenization":
+        this.type = "debit";
+        break;
+      default:
+        this.type = "credit"; // fallback
+    }
+  }
+  next();
+});
 
 export default mongoose.model<IPaymentHistory>(
   "PaymentHistory",

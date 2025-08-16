@@ -9,8 +9,7 @@ import {
 import {
   OPENAI_API_KEY,
   GOOGLE_DRIVE_APIKEY,
-  STRIPE_SECRET_KEY,
-  STRIPE_WEBHOOK_SECRET,
+  PAYSTACK_SECRET_KEY,
 } from "./keys.js";
 import createTokenUser from "./createTokenUser.js";
 import createTokenTutor from "./createTokenTutor.js";
@@ -31,8 +30,7 @@ export {
   attachCookiesToResponse,
   OPENAI_API_KEY,
   GOOGLE_DRIVE_APIKEY,
-  STRIPE_SECRET_KEY,
-  STRIPE_WEBHOOK_SECRET,
+  PAYSTACK_SECRET_KEY,
   createTokenUser,
   createTokenTutor,
   createTokenAdmin,

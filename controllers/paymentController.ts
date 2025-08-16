@@ -6,63 +6,15 @@ import PurchasedCourse from "../models/PurchasedCourse.js";
 import PaymentHistory from "../models/PaymentHistory.js";
 import axios from "axios";
 import crypto from "crypto";
-
-const PAYSTACK_SECRET_KEY =
-  process.env.NODE_ENV === "production"
-    ? process.env.PAYSTACK_SECRET_LIVE_KEY
-    : process.env.PAYSTACK_SECRET_TEST_KEY || "";
+import { PAYSTACK_SECRET_KEY } from "../utils/index.js";
+import {
+  InitializePayment,
+  PaystackRefund,
+  PaystackVerify,
+} from "../services/index.js";
 
 const displayCard = (last4: string, bin: string) => {
   return `${bin.slice(0, 4)} **** **** **** ${last4}`;
-};
-
-const initializePayment = async (
-  id: string,
-  email: string,
-  amount: number,
-  purpose: string,
-  callbackPath: string,
-  extraMetadata: Record<string, any> = {}
-): Promise<{ authorization_url: string; reference: string }> => {
-  if (!email || !amount || !purpose) {
-    throw new Error("Email, amount, and purpose are required");
-  }
-  const callback_url = `${process.env.CLIENT_URL}${
-    callbackPath || "/payment/callback"
-  }`;
-
-  const amountInKobo = amount * 100; // Paystack expects kobo
-
-  // 👇 channels logic
-  const channels =
-    purpose === "card_tokenization"
-      ? ["card"] // only card allowed
-      : undefined; // allow all channels
-
-  const response = await axios.post(
-    "https://api.paystack.co/transaction/initialize",
-    {
-      email,
-      amount: amountInKobo,
-      callback_url,
-      ...(channels && { channels }),
-      metadata: {
-        id,
-        purpose,
-        ...extraMetadata, // can include courseId, tutorId, etc.
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  const { authorization_url, reference } = response.data.data;
-
-  return { authorization_url, reference };
 };
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
@@ -124,12 +76,12 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
       const purpose = metadata?.purpose;
 
       if (purpose === "card_tokenization") {
-        const userId = metadata.id;
+        const customerId = metadata.id;
         const priceInKobo = 100 * 100; // ₦100 in kobo
         const reference = event.data.reference;
 
         const existingPaymentMethods = await PaymentMethod.find({
-          user: userId,
+          user: customerId,
         });
         const isFirstPaymentMethod = existingPaymentMethods.length === 0;
 
@@ -144,10 +96,12 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
           bank,
           cardType,
           cardHolderName,
-        } = await verifyAndTokenizeCard(reference, priceInKobo, userId);
+          customerModel,
+        } = await verifyAndTokenizeCard(reference, priceInKobo, customerId);
 
         await PaymentMethod.create({
-          user: userId,
+          customer: customerId,
+          customerModel,
           authorizationCode,
           bin,
           lastFour,
@@ -159,7 +113,18 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
           isDefault: isFirstPaymentMethod,
         });
 
-        console.log(`Card tokenized for user ${userId}`);
+        console.log(`Card tokenized for user ${customerId}`);
+
+        // Immediately refund the ₦100 charge
+        try {
+          const refundResponse = await PaystackRefund(reference, customerId);
+          console.log("Refund processed:", refundResponse);
+        } catch (refundError: any) {
+          console.error(
+            "Refund failed:",
+            refundError.response?.data || refundError
+          );
+        }
       }
 
       // You can handle other purposes here, e.g., course_purchase, wallet_topup, etc.
@@ -175,19 +140,12 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
 const verifyAndTokenizeCard = async (
   reference: string,
   expectedAmount: number,
-  userId: string,
+  customerId: string,
   courseId?: string
 ) => {
-  const response = await axios.get(
-    `https://api.paystack.co/transaction/verify/${reference}`,
-    {
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-      },
-    }
-  );
+  const verifyResponse = await PaystackVerify(reference);
 
-  const data = response.data.data;
+  const data = verifyResponse.data.data;
   const paymentStatus = data.status;
   const paymentData = data.authorization;
 
@@ -195,18 +153,22 @@ const verifyAndTokenizeCard = async (
 
   // Always log the attempt
   await PaymentHistory.create({
-    user: userId,
+    customer: customerId,
+    customerModel: data.metadata.customerModel || "User",
     course: courseId,
     reference,
-    transactionId: data.id,
     amount: data.amount,
+    currency: paymentData.currency,
+    type: "debit",
+    transactionId: data.id,
+    transactionType: data.metadata.transactionType || "course_payment",
     status: paymentStatus,
     bank: paymentData.bank,
     cardType: paymentData.card_type,
     gatewayResponse: data.gateway_response,
     channel: paymentData.channel,
-    currency: paymentData.currency,
     paidAt: paymentData.paid_at,
+    ipAddress: data.ip_address,
   });
 
   // ✅ Check if the transaction was successful
@@ -219,7 +181,7 @@ const verifyAndTokenizeCard = async (
     throw new Error("Incorrect payment amount");
   }
 
-  const { authorization, id: transactionId } = data;
+  const { authorization, id: transactionId, metadata } = data;
 
   if (!authorization?.reusable) {
     throw new Error("Card not reusable");
@@ -239,6 +201,8 @@ const verifyAndTokenizeCard = async (
       bank: authorization.bank,
       cardType: authorization.card_type,
       cardHolderName: authorization.account_name || "Unknown",
+      customerModel: metadata.customerModel || "User",
+      transactionType: metadata.transactionType || "course_payment",
     };
   }
 
@@ -254,11 +218,12 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
     const amount = 100;
 
     // Initialize payment for tokenization
-    const { authorization_url, reference } = await initializePayment(
+    const { authorization_url, reference } = await InitializePayment(
       userId!,
       email!,
       amount,
       "card_tokenization",
+      "User",
       "/payment/callback",
       {}
     );
