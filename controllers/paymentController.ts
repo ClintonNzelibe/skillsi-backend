@@ -33,13 +33,19 @@ const initializePayment = async (
 
   const amountInKobo = amount * 100; // Paystack expects kobo
 
+  // 👇 channels logic
+  const channels =
+    purpose === "card_tokenization"
+      ? ["card"] // only card allowed
+      : undefined; // allow all channels
+
   const response = await axios.post(
     "https://api.paystack.co/transaction/initialize",
     {
       email,
       amount: amountInKobo,
       callback_url,
-      channels: ["card"],
+      ...(channels && { channels }),
       metadata: {
         id,
         purpose,
@@ -137,6 +143,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
           expYear,
           bank,
           cardType,
+          cardHolderName,
         } = await verifyAndTokenizeCard(reference, priceInKobo, userId);
 
         await PaymentMethod.create({
@@ -148,6 +155,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
           expYear,
           bank,
           cardType,
+          cardHolderName,
           isDefault: isFirstPaymentMethod,
         });
 
@@ -181,6 +189,9 @@ const verifyAndTokenizeCard = async (
 
   const data = response.data.data;
   const paymentStatus = data.status;
+  const paymentData = data.authorization;
+
+  console.log("Complete data:", data, "Payment status:", paymentStatus);
 
   // Always log the attempt
   await PaymentHistory.create({
@@ -190,12 +201,12 @@ const verifyAndTokenizeCard = async (
     transactionId: data.id,
     amount: data.amount,
     status: paymentStatus,
-    bank: data.bank,
-    cardType: data.card_type,
+    bank: paymentData.bank,
+    cardType: paymentData.card_type,
     gatewayResponse: data.gateway_response,
-    channel: data.channel,
-    currency: data.currency,
-    paidAt: data.paid_at,
+    channel: paymentData.channel,
+    currency: paymentData.currency,
+    paidAt: paymentData.paid_at,
   });
 
   // ✅ Check if the transaction was successful
@@ -214,7 +225,7 @@ const verifyAndTokenizeCard = async (
     throw new Error("Card not reusable");
   }
 
-  console.log(authorization, transactionId); 
+  console.log(authorization, transactionId);
 
   if (authorization.reusable) {
     // Save reusable card authorization_code
@@ -227,6 +238,7 @@ const verifyAndTokenizeCard = async (
       expYear: authorization.exp_year,
       bank: authorization.bank,
       cardType: authorization.card_type,
+      cardHolderName: authorization.account_name || "Unknown",
     };
   }
 

@@ -1,26 +1,39 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IPaymentHistory extends Document {
-  user: Types.ObjectId;
+  customer: Types.ObjectId;
   course?: Types.ObjectId;
+  transactionType: "card_tokenization"
+    | "course_payment"
+    | "tutor_withdrawal"
+    | "affiliate_withdrawal";
+  customerModel: "User" | "Admin" | "Affiliate";
   reference: string;
+  type: "credit" | "debit" | "refund";
   transactionId?: string;
   amount: number;
+  currency: "NGN" | "USD" | "EUR" | "GBP";
   status: "pending" | "success" | "failed";
   bank: string;
-  cardType: string; // Stores the type/brand of the card, e.g., 'Visa', 'MasterCard', 'Amex', etc.
+  cardType: string;
   gatewayResponse?: string;
   channel?: string;
-  currency?: string;
   paidAt?: Date;
+  ipAddress?: string;
 }
 
 const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
   {
-    user: {
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      // ref: "User",
+      refPath: "customerModel",
       required: [true, "Please provider user id"],
+    },
+    customerModel: {
+      type: String,
+      required: true,
+      enum: ["User", "Admin", "Affiliate"], // models it can point to
     },
     course: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,6 +45,11 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
       required: [true, "Please provide payment reference"],
       trim: true,
     },
+    type: {
+      type: String,
+      enum: ["credit", "debit", "refund"],
+      default: "credit",
+    },
     transactionId: {
       type: String,
       required: [true, "Please provide transaction id"],
@@ -41,6 +59,12 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
       type: Number,
       required: [true, "Please provide amount"],
     },
+    currency: {
+      type: String,
+      enum: ["NGN", "USD", "EUR", "GBP"],
+      required: [true, "Please provide currency"],
+      default: "NGN",
+    },
     status: {
       type: String,
       enum: ["pending", "success", "failed"],
@@ -48,18 +72,28 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
     },
     bank: {
       type: String,
-      required: [true, "Please provider the bank name"],
+      required: function () {
+        return this.channel === "card";
+      },
+      default: "",
     },
     cardType: {
       type: String,
-      required: [true, "Please provider the bank name"],
+      required: function () {
+        return this.channel === "card";
+      },
+      default: "",
     },
     gatewayResponse: { type: String, default: "" },
     channel: { type: String, default: "" },
-    currency: { type: String, default: "" },
     paidAt: {
       type: Date,
       default: Date.now,
+    },
+    ipAddress: {
+      type: String,
+      required: false, // Optional field
+      trim: true,
     },
   },
   { timestamps: true }
