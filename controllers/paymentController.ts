@@ -65,7 +65,6 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     // Parse JSON payload after verifying signature
     const event = JSON.parse(payload.toString());
     console.log("Received Paystack event:", event);
-    console.log("Received Paystack event:", event);
     console.log("Event type:", event.event);
     console.log("Event data:", event.data);
     console.log("Event metadata:", event.data.metadata);
@@ -143,9 +142,8 @@ const verifyAndTokenizeCard = async (
   customerId: string,
   courseId?: string
 ) => {
-  const verifyResponse = await PaystackVerify(reference);
+  const data = await PaystackVerify(reference);
 
-  const data = verifyResponse.data.data;
   const paymentStatus = data.status;
   const paymentData = data.authorization;
 
