@@ -49,12 +49,14 @@ const authenticateUser = async (
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer")) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
   const token = authHeader.split(" ")[1];
 
   if (!token) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
 
   try {
@@ -72,7 +74,8 @@ const authenticateUser = async (
     };
 
     if (!result || typeof result === "boolean" || !isUserPayload(result)) {
-      throw new UnAuthenticatedError("Authentication invalid");
+      return next(new UnAuthenticatedError("Authentication Invalid"));
+      // throw new UnAuthenticatedError("Authentication invalid");
     }
 
     const { fullName, email, userId } = result;
@@ -83,7 +86,8 @@ const authenticateUser = async (
     };
     next();
   } catch (error) {
-    throw new UnAuthenticatedError("Authentication Invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication Invalid");
   }
 };
 
@@ -94,12 +98,14 @@ const authenticateTutor = async (
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer")) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
   const token = authHeader.split(" ")[1];
 
   if (!token) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
 
   try {
@@ -118,7 +124,8 @@ const authenticateTutor = async (
     };
 
     if (!result || typeof result === "boolean" || !isTutorPayload(result)) {
-      throw new UnAuthenticatedError("Authentication invalid");
+      return next(new UnAuthenticatedError("Authentication Invalid"));
+      // throw new UnAuthenticatedError("Authentication invalid");
     }
 
     const { tutorId, email, fName, lName } = result;
@@ -130,7 +137,8 @@ const authenticateTutor = async (
     };
     next();
   } catch (error) {
-    throw new UnAuthenticatedError("Authentication Invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication Invalid");
   }
 };
 
@@ -141,12 +149,14 @@ const authenticateAdmin = async (
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer")) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
   const token = authHeader.split(" ")[1];
 
   if (!token) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
 
   try {
@@ -167,7 +177,8 @@ const authenticateAdmin = async (
     };
 
     if (!result || typeof result === "boolean" || !isAdminPayload(result)) {
-      throw new UnAuthenticatedError("Authentication invalid");
+      return next(new UnAuthenticatedError("Authentication Invalid"));
+      // throw new UnAuthenticatedError("Authentication invalid");
     }
 
     const { adminId, email, firstName, lastName, userName, role } = result;
@@ -181,7 +192,8 @@ const authenticateAdmin = async (
     };
     next();
   } catch (error) {
-    throw new UnAuthenticatedError("Authentication Invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication Invalid");
   }
 };
 
@@ -192,13 +204,15 @@ const authenticateAffiliate = async (
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer")) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
 
   const token = authHeader.split(" ")[1];
 
   if (!token) {
-    throw new UnAuthenticatedError("Authentication invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication invalid");
   }
 
   try {
@@ -220,7 +234,8 @@ const authenticateAffiliate = async (
     };
 
     if (!result || typeof result === "boolean" || !isAffiliatePayload(result)) {
-      throw new UnAuthenticatedError("Authentication invalid");
+      return next(new UnAuthenticatedError("Authentication Invalid"));
+      // throw new UnAuthenticatedError("Authentication invalid");
     }
 
     const { affiliateId, email, firstName, lastName, userName } = result;
@@ -233,7 +248,8 @@ const authenticateAffiliate = async (
     };
     next();
   } catch (error) {
-    throw new UnAuthenticatedError("Authentication Invalid");
+    return next(new UnAuthenticatedError("Authentication Invalid"));
+    // throw new UnAuthenticatedError("Authentication Invalid");
   }
 };
 
@@ -259,25 +275,49 @@ const authorizePermissions = (...roles: string[]) => {
 
 // Custom middleware that tries both authentication methods
 const authenticateUserOrTutorOrAdmin = (req: any, res: any, next: any) => {
-  // Try user authentication first
-  authenticateUser(req, res, (userErr: any) => {
-    if (!userErr && req.user) {
-      return next(); // User authenticated successfully
-    }
-
-    // If user auth fails, try tutor authentication
-    authenticateTutor(req, res, (tutorErr: any) => {
-      if (!tutorErr && req.tutor) {
-        return next(); // Tutor authenticated successfully
+  try {
+    authenticateUser(req, res, (err: any) => {
+      if (!err && req.user) {
+        return next();
       }
 
-      // Both authentications failed
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required",
-      });
+      try {
+        authenticateTutor(req, res, (err: any) => {
+          if (!err && req.tutor) {
+            return next();
+          }
+
+          try {
+            authenticateAdmin(req, res, (err: any) => {
+              if (!err && req.admin) {
+                return next();
+              }
+
+              return res.status(401).json({
+                success: false,
+                message: "Authentication required",
+              });
+            });
+          } catch {
+            return res.status(401).json({
+              success: false,
+              message: "Authentication required",
+            });
+          }
+        });
+      } catch {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required",
+        });
+      }
     });
-  });
+  } catch {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
 };
 
 export {
