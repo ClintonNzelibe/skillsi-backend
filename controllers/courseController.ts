@@ -419,7 +419,7 @@ const fetchAllCoursesTutor = async (
       andFilters.push({ status });
     }
 
-    if (andFilters.length === 0) {
+    if (andFilters.length > 0) {
       filter.$and = andFilters;
     }
 
@@ -491,7 +491,7 @@ const fetchSingleCourseTutor = async (
     }
 
     // Check tutor ownership
-    if (course.tutor.toString() !== tutorId.toString()) {
+    if (course.tutor._id.toString() !== tutorId.toString()) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
         message: "Access denied: You do not own this course",

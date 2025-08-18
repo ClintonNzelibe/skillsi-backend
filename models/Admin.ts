@@ -13,7 +13,7 @@ export interface IAdmin extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const adminSchema = new Schema<IAdmin>(
+const AdminSchema = new Schema<IAdmin>(
   {
     firstName: {
       type: String,
@@ -63,7 +63,7 @@ const adminSchema = new Schema<IAdmin>(
 );
 
 // Hash password before saving
-adminSchema.pre<IAdmin>("save", async function (next) {
+AdminSchema.pre<IAdmin>("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password!, salt);
@@ -71,7 +71,7 @@ adminSchema.pre<IAdmin>("save", async function (next) {
 });
 
 // Compare password method
-adminSchema.methods.comparePassword = async function (
+AdminSchema.methods.comparePassword = async function (
   candidatePassword: string
 ) {
   if (!this.password) {
@@ -82,7 +82,7 @@ adminSchema.methods.comparePassword = async function (
 };
 
 // Prevent role change if superadmin
-adminSchema.pre("findOneAndUpdate", async function (next) {
+AdminSchema.pre("findOneAndUpdate", async function (next) {
   const update = this.getUpdate() as any;
   if (!update) return next();
 
@@ -97,7 +97,7 @@ adminSchema.pre("findOneAndUpdate", async function (next) {
 });
 
 // Also check for save() updates (manual doc.save calls)
-adminSchema.pre("save", function (next) {
+AdminSchema.pre("save", function (next) {
   if (!this.isModified("role")) return next();
   if (this.get("role") !== "superadmin") return next();
 
@@ -108,4 +108,4 @@ adminSchema.pre("save", function (next) {
   next();
 });
 
-export default mongoose.model<IAdmin>("Admin", adminSchema);
+export default mongoose.model<IAdmin>("Admin", AdminSchema);

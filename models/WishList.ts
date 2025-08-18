@@ -6,7 +6,7 @@ export interface IWishList extends Document {
   course: Types.ObjectId;
 }
 
-const wishListSchema = new Schema<IWishList>(
+const WishListSchema = new Schema<IWishList>(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +23,6 @@ const wishListSchema = new Schema<IWishList>(
 );
 
 // Prevent duplicate user-course combination
-wishListSchema.index({ user: 1, course: 1 }, { unique: true });
+WishListSchema.index({ user: 1, course: 1 }, { unique: true });
 
-export default mongoose.model<IWishList>("WishList", wishListSchema);
+export default mongoose.model<IWishList>("WishList", WishListSchema);

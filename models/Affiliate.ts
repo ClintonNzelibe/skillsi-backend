@@ -1,9 +1,8 @@
-// models/Tutor.ts
 import mongoose, { Schema, Document } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 
-export interface ITutor extends Document {
+export interface IAffiliate extends Document {
   firstName: string;
   lastName: string;
   userName?: string;
@@ -31,7 +30,7 @@ export interface ITutor extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const TutorSchema: Schema = new Schema(
+const AffiliateSchema: Schema = new Schema(
   {
     firstName: {
       type: String,
@@ -134,17 +133,17 @@ const TutorSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-TutorSchema.pre<ITutor>("save", async function () {
+AffiliateSchema.pre<IAffiliate>("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password!, salt);
 });
 
-TutorSchema.methods.comparePassword = async function (
+AffiliateSchema.methods.comparePassword = async function (
   canditatePassword: string
 ) {
   const isMatch = await bcrypt.compare(canditatePassword, this.password!);
   return isMatch;
 };
 
-export default mongoose.model<ITutor>("Tutor", TutorSchema);
+export default mongoose.model<IAffiliate>("Affiliate", AffiliateSchema);
