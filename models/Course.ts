@@ -15,7 +15,7 @@ interface ICourse extends Document {
   noOfStudents: number;
   language: string;
   otherLanguages: [string];
-  thumbnail: String;
+  thumbnail: string;
   totalReview: number;
   rating: number;
   totalRating: number;
