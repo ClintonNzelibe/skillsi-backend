@@ -219,9 +219,10 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
 
 const updateCourse = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId } = req.params; // courseId
+    const { courseId } = req.params;
     const tutorId = req.tutor?.tutorId;
     const id = courseId;
+
     const {
       bannerImage,
       title,
@@ -253,54 +254,56 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    if (course.tutor.toString() === tutorId) {
+    // ✅ Correct ownership check
+    if (!tutorId || course.tutor.toString() !== String(tutorId)) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
-        message: "You are not the owner of the course, get out",
+        message: "You are not the owner of this course",
       });
     }
 
-    // ✅ Upload new files only if changed
+    // ===== Course-level media updates (upload new, then delete old) =====
     let bannerUrl = course.bannerImage;
     if (bannerImage && bannerImage !== course.bannerImage) {
-      bannerUrl = await UploadFileToCloudinary(
+      const newBannerUrl = await UploadFileToCloudinary(
         bannerImage,
-        {
-          folder: "Course",
-          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
-          maxSizeInMB: 30,
-        },
+        { folder: "Course", allowedFileTypes: ["image/png", "image/jpeg", "image/gif"], maxSizeInMB: 30 },
         res
       );
+      // delete old only after successful upload
+      if (course.bannerImage) {
+        try { await DeleteFileFromCloudinary(course.bannerImage); } catch (e) { console.error("Delete old banner failed:", e); }
+      }
+      bannerUrl = newBannerUrl;
     }
 
     let thumbnailUrl = course.thumbnail;
     if (thumbnail && thumbnail !== course.thumbnail) {
-      thumbnailUrl = await UploadFileToCloudinary(
+      const newThumbUrl = await UploadFileToCloudinary(
         thumbnail,
-        {
-          folder: "Course",
-          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
-          maxSizeInMB: 30,
-        },
+        { folder: "Course", allowedFileTypes: ["image/png", "image/jpeg", "image/gif"], maxSizeInMB: 30 },
         res
       );
+      if (course.thumbnail) {
+        try { await DeleteFileFromCloudinary(course.thumbnail); } catch (e) { console.error("Delete old thumbnail failed:", e); }
+      }
+      thumbnailUrl = newThumbUrl;
     }
 
     let promoVideoFinalUrl = course.promoVideoUrl;
     if (promoVideoUrl && promoVideoUrl !== course.promoVideoUrl) {
-      promoVideoFinalUrl = await UploadFileToCloudinary(
+      const newPromoUrl = await UploadFileToCloudinary(
         promoVideoUrl,
-        {
-          folder: "Course",
-          allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-          maxSizeInMB: 3000000000,
-        },
+        { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
         res
       );
+      if (course.promoVideoUrl) {
+        try { await DeleteFileFromCloudinary(course.promoVideoUrl); } catch (e) { console.error("Delete old promo video failed:", e); }
+      }
+      promoVideoFinalUrl = newPromoUrl;
     }
 
-    // ✅ Update main course details
+    // ===== Update main course details =====
     await Course.findByIdAndUpdate(id, {
       title,
       subTitle,
@@ -323,23 +326,23 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
       allowQuestions,
     });
 
-    // ✅ Handle Modules
+    // ===== Modules/Lessons diffing =====
+    const safeModules = Array.isArray(modules) ? modules : [];
     const existingModules = await CourseModule.find({ courseId: id });
-    const existingModuleIds = existingModules.map((m: any) => m._id.toString());
-    const incomingModuleIds = modules.map((m: any) => m._id).filter(Boolean);
+    const existingModuleIds = existingModules.map((m: any) => String(m._id));
+    const incomingModuleIds = safeModules.map((m: any) => m?._id).filter(Boolean).map(String);
 
-    // Delete removed modules
+    // Remove deleted modules (and their lessons + files)
     for (const module of existingModules) {
-      if (!incomingModuleIds.includes(module?._id?.toString())) {
-        // delete lessons + files
+      if (!incomingModuleIds.includes(String(module._id))) {
         const lessons = await CourseLesson.find({ moduleId: module._id });
         for (const lesson of lessons) {
           if (lesson.videoUrl) {
-            await DeleteFileFromCloudinary(lesson?.videoUrl);
+            try { await DeleteFileFromCloudinary(lesson.videoUrl); } catch (e) { console.error("Delete lesson video failed:", e); }
           }
           if (lesson.resources?.length) {
             for (const resource of lesson.resources) {
-              await DeleteFileFromCloudinary(resource);
+              try { await DeleteFileFromCloudinary(resource); } catch (e) { console.error("Delete lesson resource failed:", e); }
             }
           }
           await CourseLesson.findByIdAndDelete(lesson._id);
@@ -352,43 +355,38 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     let totalLessons = 0;
     let totalDuration = 0;
 
-    // Add/update modules
-    for (const module of modules) {
+    // Add/update modules & lessons
+    for (const mod of safeModules) {
       totalModules++;
-      let moduleId = module._id;
+      let moduleId = mod._id;
 
-      if (moduleId && existingModuleIds.includes(moduleId)) {
-        // update existing module
+      if (moduleId && existingModuleIds.includes(String(moduleId))) {
         await CourseModule.findByIdAndUpdate(moduleId, {
-          title: module.title,
-          description: module.description,
+          title: mod.title,
+          description: mod.description,
         });
       } else {
-        // create new module
         const newModule = await CourseModule.create({
           courseId: id,
-          title: module.title,
-          description: module.description,
+          title: mod.title,
+          description: mod.description,
         });
         moduleId = newModule._id;
       }
 
-      // ✅ Handle Lessons
       const existingLessons = await CourseLesson.find({ moduleId });
-      const existingLessonIds = existingLessons.map((l) => l._id?.toString());
-      const incomingLessonIds = module.lessons
-        .map((l: any) => l._id)
-        .filter(Boolean);
+      const existingLessonIds = existingLessons.map((l) => String(l._id));
+      const incomingLessonIds = (mod.lessons || []).map((l: any) => l?._id).filter(Boolean).map(String);
 
-      // Delete removed lessons
+      // Remove deleted lessons
       for (const lesson of existingLessons) {
-        if (!incomingLessonIds.includes(lesson?._id?.toString())) {
+        if (!incomingLessonIds.includes(String(lesson._id))) {
           if (lesson.videoUrl) {
-            await DeleteFileFromCloudinary(lesson.videoUrl);
+            try { await DeleteFileFromCloudinary(lesson.videoUrl); } catch (e) { console.error("Delete old lesson video failed:", e); }
           }
           if (lesson.resources?.length) {
             for (const resource of lesson.resources) {
-              await DeleteFileFromCloudinary(resource);
+              try { await DeleteFileFromCloudinary(resource); } catch (e) { console.error("Delete old lesson resource failed:", e); }
             }
           }
           await CourseLesson.findByIdAndDelete(lesson._id);
@@ -396,112 +394,92 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
       }
 
       // Add/update lessons
-      for (const lesson of module.lessons) {
+      for (const incoming of mod.lessons || []) {
         totalLessons++;
-        totalDuration += lesson.duration || 0;
+        totalDuration += incoming.duration || 0;
 
-        let videoUrl = lesson.videoUrl;
-        let resources: string[] = lesson.resources || [];
+        let videoUrl = incoming.videoUrl;
+        let resources: string[] = incoming.resources || [];
 
-        if (lesson._id && existingLessonIds.includes(lesson._id)) {
-          // update existing lesson
-          const oldLesson = await CourseLesson.findById(lesson._id);
+        if (incoming._id && existingLessonIds.includes(String(incoming._id))) {
+          const oldLesson = await CourseLesson.findById(incoming._id);
 
-          if (lesson.videoUrl && lesson.videoUrl !== oldLesson?.videoUrl) {
+          // video changed
+          if (incoming.videoUrl && incoming.videoUrl !== oldLesson?.videoUrl) {
             if (oldLesson?.videoUrl) {
-              await DeleteFileFromCloudinary(oldLesson?.videoUrl);
+              try { await DeleteFileFromCloudinary(oldLesson.videoUrl); } catch (e) { console.error("Delete replaced lesson video failed:", e); }
             }
             videoUrl = await UploadFileToCloudinary(
-              lesson.videoUrl,
-              {
-                folder: "Course",
-                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-                maxSizeInMB: 150,
-              },
+              incoming.videoUrl,
+              { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 150 },
               res
             );
           }
 
-          // handle resources update
-          if (
-            lesson.resources &&
-            JSON.stringify(lesson.resources) !==
-              JSON.stringify(oldLesson?.resources)
-          ) {
+          // resources replaced (naive compare)
+          if (incoming.resources && JSON.stringify(incoming.resources) !== JSON.stringify(oldLesson?.resources)) {
             if (oldLesson?.resources?.length) {
               for (const r of oldLesson.resources) {
-                await DeleteFileFromCloudinary(r);
+                try { await DeleteFileFromCloudinary(r); } catch (e) { console.error("Delete replaced lesson resource failed:", e); }
               }
             }
             resources = [];
-            for (const resource of lesson.resources) {
-              const result = await UploadFileToCloudinary(
-                resource,
-                {
-                  folder: "Course",
-                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-                  maxSizeInMB: 3000000000,
-                },
+            for (const r of incoming.resources) {
+              const up = await UploadFileToCloudinary(
+                r,
+                { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
                 res
               );
-              resources.push(result);
+              resources.push(up);
             }
           }
 
-          await CourseLesson.findByIdAndUpdate(lesson._id, {
-            title: lesson.title,
-            type: lesson.type,
+          await CourseLesson.findByIdAndUpdate(incoming._id, {
+            title: incoming.title,
+            type: incoming.type,
             videoUrl,
-            content: lesson.content,
+            content: incoming.content,
             resources,
-            order: lesson.order,
-            duration: lesson.duration,
+            order: incoming.order,
+            duration: incoming.duration,
           });
         } else {
-          // create new lesson
-          if (lesson.type === "video") {
+          // new lesson
+          if (incoming.type === "video" && incoming.videoUrl) {
             videoUrl = await UploadFileToCloudinary(
-              lesson.videoUrl,
-              {
-                folder: "Course",
-                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-                maxSizeInMB: 150,
-              },
+              incoming.videoUrl,
+              { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 150 },
               res
             );
           }
 
-          if (lesson.resources?.length) {
+          if (incoming.resources?.length) {
             resources = [];
-            for (const resource of lesson.resources) {
-              const result = await UploadFileToCloudinary(
-                resource,
-                {
-                  folder: "Course",
-                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
-                  maxSizeInMB: 3000000000,
-                },
+            for (const r of incoming.resources) {
+              const up = await UploadFileToCloudinary(
+                r,
+                { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
                 res
               );
-              resources.push(result);
+              resources.push(up);
             }
           }
 
           await CourseLesson.create({
             moduleId,
-            title: lesson.title,
-            type: lesson.type,
+            title: incoming.title,
+            type: incoming.type,
             videoUrl,
-            content: lesson.content,
+            content: incoming.content,
             resources,
-            order: lesson.order,
-            duration: lesson.duration,
+            order: incoming.order,
+            duration: incoming.duration,
           });
         }
       }
     }
 
-    // ✅ Update totals
+    // Recompute totals
     await Course.findByIdAndUpdate(id, {
       numberOfModules: totalModules,
       numberOfLessons: totalLessons,
@@ -514,9 +492,10 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     });
   } catch (error) {
     console.error("Error updating course", error);
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Internal Server Error" });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 };
 
