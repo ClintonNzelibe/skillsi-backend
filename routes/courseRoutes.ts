@@ -17,7 +17,7 @@ import {
 
 router.route("/createCourse").post(authenticateTutor, createCourse);
 
-router.route("/updateCourse/:courseId").post(authenticateTutor, updateCourse);
+router.route("/updateCourse/:courseId").patch(authenticateTutor, updateCourse);
 
 router.route("/fetchAllCoursesUser").get(authenticateUser, fetchAllCoursesUser);
 
