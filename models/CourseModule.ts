@@ -3,8 +3,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 // Course Module Interface
 interface ICourseModule extends Document {
   courseId: Types.ObjectId; // reference to Course
-  title: String;
-  description: String;
+  title: string;
+  description: string;
 }
 
 // Course Module Schema

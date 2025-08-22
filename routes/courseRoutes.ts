@@ -8,14 +8,16 @@ import {
 
 import {
   createCourse,
+  updateCourse,
   fetchAllCoursesUser,
   fetchSingleCourseUser,
   fetchAllCoursesTutor,
-  fetchSingleCourseTutor
+  fetchSingleCourseTutor,
 } from "../controllers/courseController.js"; // Adjust the import path
 
-
 router.route("/createCourse").post(authenticateTutor, createCourse);
+
+router.route("/updateCourse/:courseId").post(authenticateTutor, updateCourse);
 
 router.route("/fetchAllCoursesUser").get(authenticateUser, fetchAllCoursesUser);
 

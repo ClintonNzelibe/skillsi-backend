@@ -20,7 +20,7 @@ interface ICourse extends Document {
   rating: number;
   totalRating: number;
   totalUserRated: number;
-  promoVideoUrl: String;
+  promoVideoUrl: string;
   priceInNaira: number;
   priceInDollar: number;
   priceInPounds: number;

@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { UploadFileToCloudinary } from "../helpers/index.js"; // Your cloudinary config file
+import {
+  DeleteFileFromCloudinary,
+  UploadFileToCloudinary,
+} from "../helpers/index.js"; // Your cloudinary config file
 import Tutor from "../models/Tutor.js";
 import Course from "../models/Course.js";
 import CourseModule from "../models/CourseModule.js";
@@ -191,8 +194,8 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
 
     // ✅ Update course with totals
     await Course.findByIdAndUpdate(newCourse._id, {
-      totalModules,
-      totalLessons,
+      numberOfModules: totalModules,
+      numberOfLessons: totalLessons,
       totalDuration,
     });
 
@@ -201,14 +204,319 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       $inc: { totalCourses: 1 },
     });
 
-    res
-      .status(StatusCodes.CREATED)
-      .json({ success: true, message: "Course created successfully" });
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: "Course created successfully",
+      course: newCourse,
+    });
   } catch (error) {
     console.error("Error creating course", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, messgae: "Internal Server Error" });
+  }
+};
+
+const updateCourse = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { courseId } = req.params; // courseId
+    const tutorId = req.tutor?.tutorId;
+    const id = courseId;
+    const {
+      bannerImage,
+      title,
+      subTitle,
+      description,
+      objectives,
+      requirements,
+      targetAudience,
+      category,
+      subcategory,
+      language,
+      otherLanguages,
+      priceInNaira,
+      priceInDollar,
+      priceInPounds,
+      thumbnail,
+      promoVideoUrl,
+      allowAffiliate,
+      affiliateCommission,
+      allowQuestions,
+      modules,
+    } = req.body;
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    if (course.tutor.toString() === tutorId) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "You are not the owner of the course, get out",
+      });
+    }
+
+    // ✅ Upload new files only if changed
+    let bannerUrl = course.bannerImage;
+    if (bannerImage && bannerImage !== course.bannerImage) {
+      bannerUrl = await UploadFileToCloudinary(
+        bannerImage,
+        {
+          folder: "Course",
+          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
+          maxSizeInMB: 30,
+        },
+        res
+      );
+    }
+
+    let thumbnailUrl = course.thumbnail;
+    if (thumbnail && thumbnail !== course.thumbnail) {
+      thumbnailUrl = await UploadFileToCloudinary(
+        thumbnail,
+        {
+          folder: "Course",
+          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
+          maxSizeInMB: 30,
+        },
+        res
+      );
+    }
+
+    let promoVideoFinalUrl = course.promoVideoUrl;
+    if (promoVideoUrl && promoVideoUrl !== course.promoVideoUrl) {
+      promoVideoFinalUrl = await UploadFileToCloudinary(
+        promoVideoUrl,
+        {
+          folder: "Course",
+          allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+          maxSizeInMB: 3000000000,
+        },
+        res
+      );
+    }
+
+    // ✅ Update main course details
+    await Course.findByIdAndUpdate(id, {
+      title,
+      subTitle,
+      description,
+      objectives,
+      requirements,
+      targetAudience,
+      category,
+      subcategory,
+      language,
+      otherLanguages,
+      priceInNaira,
+      priceInDollar,
+      priceInPounds,
+      bannerImage: bannerUrl,
+      thumbnail: thumbnailUrl,
+      promoVideoUrl: promoVideoFinalUrl,
+      allowAffiliate,
+      affiliateCommission,
+      allowQuestions,
+    });
+
+    // ✅ Handle Modules
+    const existingModules = await CourseModule.find({ courseId: id });
+    const existingModuleIds = existingModules.map((m: any) => m._id.toString());
+    const incomingModuleIds = modules.map((m: any) => m._id).filter(Boolean);
+
+    // Delete removed modules
+    for (const module of existingModules) {
+      if (!incomingModuleIds.includes(module?._id?.toString())) {
+        // delete lessons + files
+        const lessons = await CourseLesson.find({ moduleId: module._id });
+        for (const lesson of lessons) {
+          if (lesson.videoUrl) {
+            await DeleteFileFromCloudinary(lesson?.videoUrl);
+          }
+          if (lesson.resources?.length) {
+            for (const resource of lesson.resources) {
+              await DeleteFileFromCloudinary(resource);
+            }
+          }
+          await CourseLesson.findByIdAndDelete(lesson._id);
+        }
+        await CourseModule.findByIdAndDelete(module._id);
+      }
+    }
+
+    let totalModules = 0;
+    let totalLessons = 0;
+    let totalDuration = 0;
+
+    // Add/update modules
+    for (const module of modules) {
+      totalModules++;
+      let moduleId = module._id;
+
+      if (moduleId && existingModuleIds.includes(moduleId)) {
+        // update existing module
+        await CourseModule.findByIdAndUpdate(moduleId, {
+          title: module.title,
+          description: module.description,
+        });
+      } else {
+        // create new module
+        const newModule = await CourseModule.create({
+          courseId: id,
+          title: module.title,
+          description: module.description,
+        });
+        moduleId = newModule._id;
+      }
+
+      // ✅ Handle Lessons
+      const existingLessons = await CourseLesson.find({ moduleId });
+      const existingLessonIds = existingLessons.map((l) => l._id?.toString());
+      const incomingLessonIds = module.lessons
+        .map((l: any) => l._id)
+        .filter(Boolean);
+
+      // Delete removed lessons
+      for (const lesson of existingLessons) {
+        if (!incomingLessonIds.includes(lesson?._id?.toString())) {
+          if (lesson.videoUrl) {
+            await DeleteFileFromCloudinary(lesson.videoUrl);
+          }
+          if (lesson.resources?.length) {
+            for (const resource of lesson.resources) {
+              await DeleteFileFromCloudinary(resource);
+            }
+          }
+          await CourseLesson.findByIdAndDelete(lesson._id);
+        }
+      }
+
+      // Add/update lessons
+      for (const lesson of module.lessons) {
+        totalLessons++;
+        totalDuration += lesson.duration || 0;
+
+        let videoUrl = lesson.videoUrl;
+        let resources: string[] = lesson.resources || [];
+
+        if (lesson._id && existingLessonIds.includes(lesson._id)) {
+          // update existing lesson
+          const oldLesson = await CourseLesson.findById(lesson._id);
+
+          if (lesson.videoUrl && lesson.videoUrl !== oldLesson?.videoUrl) {
+            if (oldLesson?.videoUrl) {
+              await DeleteFileFromCloudinary(oldLesson?.videoUrl);
+            }
+            videoUrl = await UploadFileToCloudinary(
+              lesson.videoUrl,
+              {
+                folder: "Course",
+                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                maxSizeInMB: 150,
+              },
+              res
+            );
+          }
+
+          // handle resources update
+          if (
+            lesson.resources &&
+            JSON.stringify(lesson.resources) !==
+              JSON.stringify(oldLesson?.resources)
+          ) {
+            if (oldLesson?.resources?.length) {
+              for (const r of oldLesson.resources) {
+                await DeleteFileFromCloudinary(r);
+              }
+            }
+            resources = [];
+            for (const resource of lesson.resources) {
+              const result = await UploadFileToCloudinary(
+                resource,
+                {
+                  folder: "Course",
+                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                  maxSizeInMB: 3000000000,
+                },
+                res
+              );
+              resources.push(result);
+            }
+          }
+
+          await CourseLesson.findByIdAndUpdate(lesson._id, {
+            title: lesson.title,
+            type: lesson.type,
+            videoUrl,
+            content: lesson.content,
+            resources,
+            order: lesson.order,
+            duration: lesson.duration,
+          });
+        } else {
+          // create new lesson
+          if (lesson.type === "video") {
+            videoUrl = await UploadFileToCloudinary(
+              lesson.videoUrl,
+              {
+                folder: "Course",
+                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                maxSizeInMB: 150,
+              },
+              res
+            );
+          }
+
+          if (lesson.resources?.length) {
+            resources = [];
+            for (const resource of lesson.resources) {
+              const result = await UploadFileToCloudinary(
+                resource,
+                {
+                  folder: "Course",
+                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                  maxSizeInMB: 3000000000,
+                },
+                res
+              );
+              resources.push(result);
+            }
+          }
+
+          await CourseLesson.create({
+            moduleId,
+            title: lesson.title,
+            type: lesson.type,
+            videoUrl,
+            content: lesson.content,
+            resources,
+            order: lesson.order,
+            duration: lesson.duration,
+          });
+        }
+      }
+    }
+
+    // ✅ Update totals
+    await Course.findByIdAndUpdate(id, {
+      numberOfModules: totalModules,
+      numberOfLessons: totalLessons,
+      totalDuration,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Course updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating course", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 
@@ -601,6 +909,7 @@ const fetchAllCoursesAffiliate = async (
 
 export {
   createCourse,
+  updateCourse,
   fetchAllCoursesUser,
   fetchSingleCourseUser,
   fetchAllCoursesTutor,

@@ -3,12 +3,12 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 // Course Lesson Interface
 interface ICourseLesson extends Document {
   moduleId: Types.ObjectId; // reference to Section
-  title: String;
-  type: String; // 'video', 'article', 'quiz', etc.
-  videoUrl: String; // if type is video
-  content: String; // for text/articles
-  resources: [String]; // file URLs
-  duration: Number; // in seconds/minutes
+  title: string;
+  type: string; // 'video', 'article', 'quiz', etc.
+  videoUrl: string; // if type is video
+  content: string; // for text/articles
+  resources: [string]; // file URLs
+  duration: number; // in seconds/minutes
 }
 
 // Course Lesson Schema
