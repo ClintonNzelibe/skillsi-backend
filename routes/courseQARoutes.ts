@@ -14,7 +14,7 @@ import {
 } from "../controllers/courseQAController.js";
 
 // ✅ Create a question
-router.route("/").post(authenticateUser, createQuestion);
+router.route("/:coursId").post(authenticateUser, createQuestion);
 
 // ✅ Tutor answers a question
 router.route("/answer/:questionId").patch(authenticateTutor, answerQuestion);
