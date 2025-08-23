@@ -99,15 +99,22 @@ const getTutorQuestions = async (req: Request, res: Response): Promise<any> => {
 // 4. Get Questions Asked by Logged-In User
 const getUserQuestions = async (req: Request, res: Response): Promise<any> => {
   try {
+    const { courseId } = req.params;
     const userId = req.user?.userId;
 
     // 1. User's own questions
-    const userQuestions = await CourseQA.find({ user: userId })
+    const userQuestions = await CourseQA.find({
+      user: userId,
+      course: courseId,
+    })
       .populate("courseId", "title")
       .populate("answeredBy", "fName lName email profilePicture");
 
     // 2. Other users' questions
-    const otherQuestions = await CourseQA.find({ user: { $ne: userId } })
+    const otherQuestions = await CourseQA.find({
+      user: { $ne: userId },
+      course: courseId,
+    })
       .populate("courseId", "title")
       .populate("answeredBy", "fName lName email profilePicture");
 
