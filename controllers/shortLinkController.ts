@@ -109,10 +109,10 @@ const getAllPromotedCourses = async (
       });
     }
 
-    const totalpromotedCoursesCount = await ShortLink.countDocuments({
+    const totalPromotedCoursesCount = await ShortLink.countDocuments({
       affiliate: affiliateId,
     });
-    const totalPages = Math.ceil(totalpromotedCoursesCount / limit);
+    const totalPages = Math.ceil(totalPromotedCoursesCount / limit);
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -121,7 +121,7 @@ const getAllPromotedCourses = async (
       page,
       totalCoursePerPage: promotedCourses.length,
       totalPages,
-      totalCourses: totalpromotedCoursesCount,
+      totalCourses: totalPromotedCoursesCount,
     });
   } catch (error) {
     console.error("Error fetching all promoted courses:", error);

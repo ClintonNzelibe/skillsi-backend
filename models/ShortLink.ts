@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IShortLink extends Document {
-  course: mongoose.Types.ObjectId;
-  affiliate: mongoose.Types.ObjectId;
+  course: Types.ObjectId;
+  affiliate: Types.ObjectId;
   shortCode: string;
   totalEarnings?: number;
   totalEnrollments?: number;
@@ -17,10 +17,12 @@ const ShortLinkSchema: Schema = new Schema(
   {
     course: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
       required: [true, "Please provide course id"],
     },
     affiliate: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Affiliate",
       required: [true, "Please provide affiliate id"],
     },
     shortCode: {
