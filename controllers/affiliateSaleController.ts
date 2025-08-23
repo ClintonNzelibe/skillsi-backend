@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import AffiliateSale from "../models/AffiliateSale.js"; // Adjust the path as needed
+import AffiliateSale from "../models/AffiliateSale.js";
 
 // GET /api/affiliate-sales/course/:courseId
-const getAffiliateSalesByCourse = async (req: Request, res: Response): Promise<any> => {
+const getAffiliateSalesByCourse = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { courseId } = req.params;
 
@@ -28,7 +31,9 @@ const getAffiliateSalesByCourse = async (req: Request, res: Response): Promise<a
     });
   } catch (error) {
     console.error("Error fetching affiliate sales:", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
 

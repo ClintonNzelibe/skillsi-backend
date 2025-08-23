@@ -38,18 +38,22 @@ import apiKeyMiddleware from "./middleware/api-key.js";
 // routers
 import userAuthRouter from "./routes/userAuthRoutes.js";
 import tutorAuthRouter from "./routes/tutorAuthRoutes.js";
+import affiliateAuthRouter from "./routes/affiliateAuthRoutes.js"
 import adminAuthRouter from "./routes/adminAuthRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import tutorRouter from "./routes/tutorRoutes.js";
 import tutorReview from "./routes/tutorReviewRoutes.js";
+import affiliateRouter from "./routes/affiliateRoutes.js";
 import courseRouter from "./routes/courseRoutes.js";
+import courseQARouter from "./routes/courseQARoutes.js";
+import courseReviewRouter from "./routes/courseReviewRoutes.js"
 import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
 import wishListRouter from "./routes/wishListRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
-import courseQARouter from "./routes/courseQARoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import notificationTokenRouter from "./routes/notificationTokenRoutes.js";
+import shortLinkRouter from "./routes/shortLinkRoutes.js"
 
 
 //webhook controller
@@ -199,18 +203,23 @@ app.use("/api/v1", apiKeyMiddleware);
 // Add your API routes here
 app.use("/api/v1/userAuth", userAuthRouter);
 app.use("/api/v1/tutorAuth", tutorAuthRouter);
+app.use("/api/v1/affiliateAuth", affiliateAuthRouter);
 app.use("/api/v1/adminAuth", adminAuthRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/tutor", tutorRouter);
 app.use("/api/v1/tutorReview", tutorReview);
+app.use("/api/v1/affiliate", affiliateRouter);
 app.use("/api/v1/course", courseRouter);
+app.use("/api/v1/courseQA", courseQARouter);
+app.use("/api/v1/courseReview", courseReviewRouter);
 app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 app.use("/api/v1/wishList", wishListRouter);
 app.use("/api/v1/payment", paymentRouter);
-app.use("/api/v1/courseQA", courseQARouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/notification", notificationRouter);
 app.use("/api/v1/notificationToken", notificationTokenRouter);
+app.use("/api/v1/shortLink", shortLinkRouter);
+
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

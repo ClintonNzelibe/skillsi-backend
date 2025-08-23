@@ -7,11 +7,17 @@ import CourseReview from "../models/CourseReview.js";
 // Create review
 const createReview = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId, rating, comment } = req.body;
+    const { courseId } = req.query;
+    const { rating, comment } = req.body;
     const userId = req.user?.userId;
     // const tutorId = req.body.tutorId; // could also be fetched via course if needed
 
     const courseForId = await Course.findById(courseId).select("tutor");
+    if (!courseForId) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Course not Found" });
+    }
     const tutorId = courseForId?.tutor;
 
     if (!rating || !comment) {
@@ -53,15 +59,30 @@ const createReview = async (req: Request, res: Response): Promise<any> => {
 // Fetch user reviews
 const getUserReviews = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId } = req.body;
-    const reviews = await CourseReview.find({ course: courseId, status: "approved" }).populate(
-      "course user tutor"
-    );
+    const { courseId } = req.query;
+    const userId = req.user?.userId;
+
+    // Get current user review regardless of status
+    const userReview = await CourseReview.findOne({
+      course: courseId,
+      user: userId,
+    }).populate("course user tutor");
+
+    // Get other users' approved reviews only
+    const otherReviews = await CourseReview.find({
+      course: courseId,
+      status: "approved",
+      user: { $ne: userId },
+    }).populate("course user tutor");
+
+    // Merge: put userReview at top (if exists)
+    const reviews = userReview ? [userReview, ...otherReviews] : otherReviews;
 
     res
       .status(StatusCodes.OK)
-      .json({ success: true, message: "Fetched Successfully", data: reviews });
+      .json({ success: true, message: "Fetched Successfully", reviews });
   } catch (error) {
+    console.log("Error get reviews for user", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Internal Server Error" });
@@ -120,6 +141,7 @@ const updateReview = async (req: Request, res: Response): Promise<any> => {
 
     review.rating = rating;
     review.comment = comment;
+    review.status = "approved";
     await review.save();
 
     res

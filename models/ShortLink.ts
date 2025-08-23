@@ -9,7 +9,7 @@ export interface IShortLink extends Document {
   numberOfClicks?: number;
   status?: "active" | "inactive";
 
-  updatedId: Date;
+  updatedAt: Date;
   createdAt: Date;
 }
 

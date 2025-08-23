@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
 import { UnAuthenticatedError, UnauthorizedError } from "../errors/index.js";
 import { isTokenValid } from "../utils/index.js";
 import { TokenAffiliatePayload, TokenTutorPayload } from "../type.js";
@@ -293,27 +294,27 @@ const authenticateUserOrTutorOrAdmin = (req: any, res: any, next: any) => {
                 return next();
               }
 
-              return res.status(401).json({
+              return res.status(StatusCodes.UNAUTHORIZED).json({
                 success: false,
                 message: "Authentication required",
               });
             });
           } catch {
-            return res.status(401).json({
+            return res.status(StatusCodes.UNAUTHORIZED).json({
               success: false,
               message: "Authentication required",
             });
           }
         });
       } catch {
-        return res.status(401).json({
+        return res.status(StatusCodes.UNAUTHORIZED).json({
           success: false,
           message: "Authentication required",
         });
       }
     });
   } catch {
-    return res.status(401).json({
+    return res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
       message: "Authentication required",
     });

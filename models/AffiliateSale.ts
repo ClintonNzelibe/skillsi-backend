@@ -1,30 +1,36 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IAffiliateSale extends Document {
   courseId: Types.ObjectId;
   buyerId: Types.ObjectId; // The student that made the purchase
   affiliateId: Types.ObjectId; // The affiliate who referred the sale
+  shortCode: string;
   amount: number; // Sale amount
   commission: number; // Amount the affiliate earns
   saleDate: Date;
-  paymentStatus: 'pending' | 'paid'; // Whether affiliate has been paid
+  paymentStatus: "pending" | "paid"; // Whether affiliate has been paid
 }
 
 const AffiliateSaleSchema = new Schema<IAffiliateSale>({
   courseId: {
     type: Schema.Types.ObjectId,
-    ref: 'Course',
+    ref: "Course",
     required: true,
   },
   buyerId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
   },
   affiliateId: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
+  },
+  shortCode: {
+    type: String,
+    required: [true, "Please provide a short link"],
+    trim: true,
   },
   amount: {
     type: Number,
@@ -40,9 +46,12 @@ const AffiliateSaleSchema = new Schema<IAffiliateSale>({
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid'],
-    default: 'pending',
+    enum: ["pending", "paid"],
+    default: "pending",
   },
 });
 
-export default mongoose.model<IAffiliateSale>('AffiliateSale', AffiliateSaleSchema);
+export default mongoose.model<IAffiliateSale>(
+  "AffiliateSale",
+  AffiliateSaleSchema
+);

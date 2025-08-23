@@ -10,7 +10,7 @@ import {
   updateAffiliateProfile,
   currentAffiliate,
   forgotPassword,
-  verifyTokenResetPassword,
+  verifyResetPasswordToken,
   resetPassword,
   resendToken,
   changePassword,
@@ -24,7 +24,7 @@ router.route("/currentTutor").get(authenticateTutor, currentAffiliate);
 
 router.route("/forgotPassword").post(forgotPassword);
 
-router.route("/verifyTokenResetPassword").post(verifyTokenResetPassword);
+router.route("/verifyResetPasswordToken").post(verifyResetPasswordToken);
 
 router.route("/resetPassword").patch(resetPassword);
 

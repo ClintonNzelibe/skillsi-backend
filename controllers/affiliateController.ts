@@ -173,7 +173,7 @@ const forgotPassword = async (req: Request, res: Response): Promise<any> => {
 };
 
 // verifyEmailResetPassword
-const verifyTokenResetPassword = async (
+const verifyResetPasswordToken = async (
   req: Request,
   res: Response
 ): Promise<any> => {
@@ -384,7 +384,7 @@ export {
   updateAffiliateProfile,
   currentAffiliate,
   forgotPassword,
-  verifyTokenResetPassword,
+  verifyResetPasswordToken,
   resetPassword,
   resendToken,
   changePassword,

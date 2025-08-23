@@ -1,13 +1,14 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import {
-  DeleteFileFromCloudinary,
-  UploadFileToCloudinary,
-} from "../helpers/index.js"; // Your cloudinary config file
 import Tutor from "../models/Tutor.js";
 import Course from "../models/Course.js";
 import CourseModule from "../models/CourseModule.js";
 import CourseLesson from "../models/CourseLesson.js";
+import ShortLink from "../models/ShortLink.js";
+import {
+  DeleteFileFromCloudinary,
+  UploadFileToCloudinary,
+} from "../helpers/index.js"; // Your cloudinary config file
 import { CourseStatus } from "../constants/index.js";
 import mongoose from "mongoose";
 
@@ -267,12 +268,20 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     if (bannerImage && bannerImage !== course.bannerImage) {
       const newBannerUrl = await UploadFileToCloudinary(
         bannerImage,
-        { folder: "Course", allowedFileTypes: ["image/png", "image/jpeg", "image/gif"], maxSizeInMB: 30 },
+        {
+          folder: "Course",
+          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
+          maxSizeInMB: 30,
+        },
         res
       );
       // delete old only after successful upload
       if (course.bannerImage) {
-        try { await DeleteFileFromCloudinary(course.bannerImage); } catch (e) { console.error("Delete old banner failed:", e); }
+        try {
+          await DeleteFileFromCloudinary(course.bannerImage);
+        } catch (e) {
+          console.error("Delete old banner failed:", e);
+        }
       }
       bannerUrl = newBannerUrl;
     }
@@ -281,11 +290,19 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     if (thumbnail && thumbnail !== course.thumbnail) {
       const newThumbUrl = await UploadFileToCloudinary(
         thumbnail,
-        { folder: "Course", allowedFileTypes: ["image/png", "image/jpeg", "image/gif"], maxSizeInMB: 30 },
+        {
+          folder: "Course",
+          allowedFileTypes: ["image/png", "image/jpeg", "image/gif"],
+          maxSizeInMB: 30,
+        },
         res
       );
       if (course.thumbnail) {
-        try { await DeleteFileFromCloudinary(course.thumbnail); } catch (e) { console.error("Delete old thumbnail failed:", e); }
+        try {
+          await DeleteFileFromCloudinary(course.thumbnail);
+        } catch (e) {
+          console.error("Delete old thumbnail failed:", e);
+        }
       }
       thumbnailUrl = newThumbUrl;
     }
@@ -294,11 +311,19 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     if (promoVideoUrl && promoVideoUrl !== course.promoVideoUrl) {
       const newPromoUrl = await UploadFileToCloudinary(
         promoVideoUrl,
-        { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
+        {
+          folder: "Course",
+          allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+          maxSizeInMB: 3000000000,
+        },
         res
       );
       if (course.promoVideoUrl) {
-        try { await DeleteFileFromCloudinary(course.promoVideoUrl); } catch (e) { console.error("Delete old promo video failed:", e); }
+        try {
+          await DeleteFileFromCloudinary(course.promoVideoUrl);
+        } catch (e) {
+          console.error("Delete old promo video failed:", e);
+        }
       }
       promoVideoFinalUrl = newPromoUrl;
     }
@@ -330,7 +355,10 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     const safeModules = Array.isArray(modules) ? modules : [];
     const existingModules = await CourseModule.find({ courseId: id });
     const existingModuleIds = existingModules.map((m: any) => String(m._id));
-    const incomingModuleIds = safeModules.map((m: any) => m?._id).filter(Boolean).map(String);
+    const incomingModuleIds = safeModules
+      .map((m: any) => m?._id)
+      .filter(Boolean)
+      .map(String);
 
     // Remove deleted modules (and their lessons + files)
     for (const module of existingModules) {
@@ -338,11 +366,19 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
         const lessons = await CourseLesson.find({ moduleId: module._id });
         for (const lesson of lessons) {
           if (lesson.videoUrl) {
-            try { await DeleteFileFromCloudinary(lesson.videoUrl); } catch (e) { console.error("Delete lesson video failed:", e); }
+            try {
+              await DeleteFileFromCloudinary(lesson.videoUrl);
+            } catch (e) {
+              console.error("Delete lesson video failed:", e);
+            }
           }
           if (lesson.resources?.length) {
             for (const resource of lesson.resources) {
-              try { await DeleteFileFromCloudinary(resource); } catch (e) { console.error("Delete lesson resource failed:", e); }
+              try {
+                await DeleteFileFromCloudinary(resource);
+              } catch (e) {
+                console.error("Delete lesson resource failed:", e);
+              }
             }
           }
           await CourseLesson.findByIdAndDelete(lesson._id);
@@ -376,17 +412,28 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
 
       const existingLessons = await CourseLesson.find({ moduleId });
       const existingLessonIds = existingLessons.map((l) => String(l._id));
-      const incomingLessonIds = (mod.lessons || []).map((l: any) => l?._id).filter(Boolean).map(String);
+      const incomingLessonIds = (mod.lessons || [])
+        .map((l: any) => l?._id)
+        .filter(Boolean)
+        .map(String);
 
       // Remove deleted lessons
       for (const lesson of existingLessons) {
         if (!incomingLessonIds.includes(String(lesson._id))) {
           if (lesson.videoUrl) {
-            try { await DeleteFileFromCloudinary(lesson.videoUrl); } catch (e) { console.error("Delete old lesson video failed:", e); }
+            try {
+              await DeleteFileFromCloudinary(lesson.videoUrl);
+            } catch (e) {
+              console.error("Delete old lesson video failed:", e);
+            }
           }
           if (lesson.resources?.length) {
             for (const resource of lesson.resources) {
-              try { await DeleteFileFromCloudinary(resource); } catch (e) { console.error("Delete old lesson resource failed:", e); }
+              try {
+                await DeleteFileFromCloudinary(resource);
+              } catch (e) {
+                console.error("Delete old lesson resource failed:", e);
+              }
             }
           }
           await CourseLesson.findByIdAndDelete(lesson._id);
@@ -407,27 +454,47 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
           // video changed
           if (incoming.videoUrl && incoming.videoUrl !== oldLesson?.videoUrl) {
             if (oldLesson?.videoUrl) {
-              try { await DeleteFileFromCloudinary(oldLesson.videoUrl); } catch (e) { console.error("Delete replaced lesson video failed:", e); }
+              try {
+                await DeleteFileFromCloudinary(oldLesson.videoUrl);
+              } catch (e) {
+                console.error("Delete replaced lesson video failed:", e);
+              }
             }
             videoUrl = await UploadFileToCloudinary(
               incoming.videoUrl,
-              { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 150 },
+              {
+                folder: "Course",
+                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                maxSizeInMB: 150,
+              },
               res
             );
           }
 
           // resources replaced (naive compare)
-          if (incoming.resources && JSON.stringify(incoming.resources) !== JSON.stringify(oldLesson?.resources)) {
+          if (
+            incoming.resources &&
+            JSON.stringify(incoming.resources) !==
+              JSON.stringify(oldLesson?.resources)
+          ) {
             if (oldLesson?.resources?.length) {
               for (const r of oldLesson.resources) {
-                try { await DeleteFileFromCloudinary(r); } catch (e) { console.error("Delete replaced lesson resource failed:", e); }
+                try {
+                  await DeleteFileFromCloudinary(r);
+                } catch (e) {
+                  console.error("Delete replaced lesson resource failed:", e);
+                }
               }
             }
             resources = [];
             for (const r of incoming.resources) {
               const up = await UploadFileToCloudinary(
                 r,
-                { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
+                {
+                  folder: "Course",
+                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                  maxSizeInMB: 3000000000,
+                },
                 res
               );
               resources.push(up);
@@ -448,7 +515,11 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
           if (incoming.type === "video" && incoming.videoUrl) {
             videoUrl = await UploadFileToCloudinary(
               incoming.videoUrl,
-              { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 150 },
+              {
+                folder: "Course",
+                allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                maxSizeInMB: 150,
+              },
               res
             );
           }
@@ -458,7 +529,11 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
             for (const r of incoming.resources) {
               const up = await UploadFileToCloudinary(
                 r,
-                { folder: "Course", allowedFileTypes: ["video/mp4", "video/mov", "video/avi"], maxSizeInMB: 3000000000 },
+                {
+                  folder: "Course",
+                  allowedFileTypes: ["video/mp4", "video/mov", "video/avi"],
+                  maxSizeInMB: 3000000000,
+                },
                 res
               );
               resources.push(up);
@@ -577,6 +652,7 @@ const fetchAllCoursesUser = async (
         "tutor",
         "fName lName email profileImage totalStudent totalReviews totalCourses"
       )
+      .populate("category", "name description")
       .select("-totalEarnings -totalAffiliate");
 
     // const courses = await query;
@@ -619,6 +695,7 @@ const fetchSingleCourseUser = async (
         "tutor",
         "fName lName email profileImage totalStudent totalReviews totalCourses"
       )
+      .populate("category", "name description")
       .select(
         "-totalEarnings -totalAffiliate -totalEnrollments -promoVideoUrl"
       );
@@ -819,25 +896,24 @@ const fetchAllCoursesAffiliate = async (
   res: Response
 ): Promise<any> => {
   try {
+    const affiliateId = req.affiliate?.affiliateId;
+
+    if (!affiliateId) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Affiliate not authenticated",
+      });
+    }
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
     const { search } = req.query;
 
-    const affiliateId = req.affiliate?.affiliateId;
-    if (!affiliateId) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({
-        success: false,
-        message: "Unauthorized: Affiliate ID missing",
-      });
-    }
-
-    let filter: any = { allowAffiliate: true };
-
-    const andFilters: any[] = [];
+    let filter: any = { $and: [{ allowAffiliate: true }] };
 
     if (search) {
-      andFilters.push({
+      filter.$and.push({
         $or: [
           { title: { $regex: search, $options: "i" } },
           { description: { $regex: search, $options: "i" } },
@@ -845,19 +921,67 @@ const fetchAllCoursesAffiliate = async (
       });
     }
 
-    if (andFilters.length === 0) {
-      filter.$and = andFilters;
-    }
+    if (filter.$and.length === 0) delete filter.$and;
 
-    const courses = await Course.find(filter)
-      .skip(skip)
-      .limit(limit)
-      .populate(
-        "tutor",
-        "fName lName email profileImage totalStudent totalReviews totalCourses"
-      )
-      .select("-totalEarnings -totalAffiliate -totalEnrollments");
+    const courses = await Course.aggregate([
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: "$category" },
+      {
+        $lookup: {
+          from: "shortlinks", // collection name in MongoDB
+          let: { courseId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$course", "$$courseId"] },
+                    {
+                      $eq: [
+                        "$affiliate",
+                        new mongoose.Types.ObjectId(affiliateId),
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { shortCode: 1 } },
+          ],
+          as: "shortLink",
+        },
+      },
+      {
+        $addFields: {
+          shortLink: { $arrayElemAt: ["$shortLink.shortCode", 0] },
+        },
+      },
+      {
+        $project: {
+          bannerImage: 1,
+          title: 1,
+          subTitle: 1,
+          description: 1,
+          category: 1,
+          allowAffiliate: 1,
+          affiliateCommission: 1,
+          shortLink: 1,
+        },
+      },
+    ]);
 
+    // const courses = await query;
     if (!courses || courses.length === 0) {
       return res.status(StatusCodes.OK).json({
         success: true,
@@ -879,10 +1003,129 @@ const fetchAllCoursesAffiliate = async (
       totalCourses: totalCoursesCount,
     });
   } catch (error) {
-    console.error("Error fetching affiliate courses", error);
+    console.error("Error fetching affiliate courses: ", error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, message: "Internal Server Error" });
+      .json({ success: false, messgae: "Internal Server Error" });
+  }
+};
+
+const fetchSingleCourseAffiliate = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { courseId } = req.params;
+    const affiliateId = req.affiliate?.affiliateId;
+
+    // ✅ Aggregate pipeline
+    const courseData = await Course.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(courseId) },
+      },
+      {
+        $lookup: {
+          from: "tutors",
+          localField: "tutor",
+          foreignField: "_id",
+          as: "tutor",
+        },
+      },
+      { $unwind: "$tutor" }, // tutor is single, not array
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      { $unwind: "$category" }, // category is single
+      {
+        $lookup: {
+          from: "shortlinks",
+          let: { courseId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$course", "$$courseId"] },
+                    {
+                      $eq: [
+                        "$affiliate",
+                        new mongoose.Types.ObjectId(affiliateId),
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $project: { shortCode: 1 } },
+          ],
+          as: "shortLink",
+        },
+      },
+      {
+        $addFields: {
+          shortLink: { $arrayElemAt: ["$shortLink.shortCode", 0] },
+        },
+      },
+      {
+        $project: {
+          bannerImage: 1,
+          title: 1,
+          subTitle: 1,
+          description: 1,
+          tutor: { fName: 1, lName: 1, profileImage: 1 },
+          priceInNaira: 1,
+          numberOfModules: 1,
+          numberOfLessons: 1,
+          totalDuration: 1,
+          affiliateCommission: 1,
+          category: { name: 1, description: 1 },
+          shortLink: 1,
+        },
+      },
+    ]);
+
+    if (!courseData || courseData.length === 0) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    const course = courseData[0];
+
+    // ✅ Fetch modules & lessons separately (still needed)
+    const modules = await CourseModule.find({ courseId }).sort({
+      createdAt: 1,
+    });
+
+    const modulesWithLessons = await Promise.all(
+      modules.map(async (module) => {
+        const lessons = await CourseLesson.find({ moduleId: module._id })
+          .select("-videoUrl -content -resources")
+          .sort({ createdAt: 1 });
+
+        return {
+          ...module.toObject(),
+          lessons,
+        };
+      })
+    );
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      course,
+      modules: modulesWithLessons,
+    });
+  } catch (error) {
+    console.error("Error fetching single course", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, messgae: "Internal Server Error" });
   }
 };
 
@@ -893,4 +1136,6 @@ export {
   fetchSingleCourseUser,
   fetchAllCoursesTutor,
   fetchSingleCourseTutor,
+  fetchAllCoursesAffiliate,
+  fetchSingleCourseAffiliate,
 };
