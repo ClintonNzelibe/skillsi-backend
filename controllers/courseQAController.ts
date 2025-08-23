@@ -10,7 +10,7 @@ const createQuestion = async (req: Request, res: Response): Promise<any> => {
     const { courseId } = req.params;
     const { question } = req.body;
 
-    const course = await Course.findById(courseId);    
+    const course = await Course.findById(courseId);
 
     const newQuestion = await CourseQA.create({
       course: courseId,
@@ -83,13 +83,11 @@ const getTutorQuestions = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    res
-      .status(StatusCodes.OK)
-      .json({
-        success: true,
-        message: "Fetched successfully",
-        data: questions,
-      });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Fetched successfully",
+      data: questions,
+    });
   } catch (error) {
     console.error("Get Tutor Questions Error:", error);
     res
@@ -103,11 +101,24 @@ const getUserQuestions = async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.user?.userId;
 
-    const questions = await CourseQA.find({ askedBy: userId })
+    // 1. User's own questions
+    const userQuestions = await CourseQA.find({ user: userId })
       .populate("courseId", "title")
       .populate("answeredBy", "fName lName email profilePicture");
 
-    res.status(StatusCodes.OK).json({ success: true, data: questions });
+    // 2. Other users' questions
+    const otherQuestions = await CourseQA.find({ user: { $ne: userId } })
+      .populate("courseId", "title")
+      .populate("answeredBy", "fName lName email profilePicture");
+
+    // 3. Merge: user first, others next
+    const questions = [...userQuestions, ...otherQuestions];
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Fetched successfully",
+      data: questions,
+    });
   } catch (error) {
     console.error("Get User Questions Error:", error);
     res
