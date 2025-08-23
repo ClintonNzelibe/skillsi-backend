@@ -35,8 +35,8 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
       const shortCode = await generateUniqueShortCode();
 
       link = await ShortLink.create({
-        courseId,
-        affiliateId,
+        course: courseId,
+        affiliate: affiliateId,
         shortCode,
       });
     }

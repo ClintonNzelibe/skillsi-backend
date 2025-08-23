@@ -4,7 +4,6 @@ const router = express.Router();
 import {
   authenticateTutor,
   authenticateAffiliate,
-  authenticateUserOrTutorOrAdmin,
 } from "../middleware/authentication.js";
 
 import {
