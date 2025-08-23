@@ -19,7 +19,7 @@ router
   .get(authenticateTutor, getTutorAffiliateCourses);
 
 router
-  .route("/getAllPromotedCourses")
+  .route("/affiliate/getAllPromotedCourses")
   .get(authenticateAffiliate, getAllPromotedCourses);
 
 // Get all reviews for tutor's courses
