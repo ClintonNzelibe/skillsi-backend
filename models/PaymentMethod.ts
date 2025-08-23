@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 // Example Mongoose schema for PaymentMethod
 
-interface PaymentMethodDocument extends Document {
+interface IPaymentMethodDocument extends Document {
   customer: Types.ObjectId;
   customerModel: "User" | "Admin" | "Affiliate";
   authorizationCode: string;
@@ -17,7 +17,7 @@ interface PaymentMethodDocument extends Document {
   isDefault: boolean;
 }
 
-const PaymentMethodSchema = new Schema<PaymentMethodDocument>(
+const PaymentMethodSchema = new Schema<IPaymentMethodDocument>(
   {
     customer: {
       type: mongoose.Schema.Types.ObjectId,
@@ -72,7 +72,7 @@ const PaymentMethodSchema = new Schema<PaymentMethodDocument>(
   }
 );
 
-export default mongoose.model<PaymentMethodDocument>(
+export default mongoose.model<IPaymentMethodDocument>(
   "PaymentMethod",
   PaymentMethodSchema
 );

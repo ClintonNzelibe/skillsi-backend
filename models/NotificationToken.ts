@@ -9,7 +9,7 @@ interface INotificationToken extends Document {
   updatedAt: Date;
 }
 
-const NotificationTokenSchema = new mongoose.Schema(
+const NotificationTokenSchema: Schema<INotificationToken> = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,

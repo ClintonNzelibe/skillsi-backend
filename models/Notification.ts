@@ -12,7 +12,7 @@ export interface INotification extends Document {
   type?: "system" | "course" | "payment" | "other" | string;
 }
 
-const NotificationSchema: Schema = new Schema(
+const NotificationSchema: Schema<INotification> = new Schema(
   {
     title: {
       type: String,

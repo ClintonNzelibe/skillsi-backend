@@ -68,8 +68,8 @@ const getShortLink = async (req: Request, res: Response): Promise<any> => {
     }
 
     res.json({
-      courseId: shortLink.courseId,
-      affiliateId: shortLink.affiliateId,
+      courseId: shortLink.course,
+      affiliateId: shortLink.affiliate,
       shortCode: shortLink.shortCode,
     });
   } catch (error) {

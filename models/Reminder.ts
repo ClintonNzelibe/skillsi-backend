@@ -10,7 +10,7 @@ export interface IReminder extends Document {
   lastSent: Date | null;
 }
 
-const ReminderSchema: Schema = new Schema(
+const ReminderSchema: Schema<IReminder> = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,

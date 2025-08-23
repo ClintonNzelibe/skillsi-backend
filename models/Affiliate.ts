@@ -11,6 +11,7 @@ export interface IAffiliate extends Document {
   password: string;
   profilePicture?: string;
   numberOfEdits?: number;
+  totalEnrollments?: number;
   isProfileComplete?: boolean;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
@@ -30,7 +31,7 @@ export interface IAffiliate extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const AffiliateSchema: Schema = new Schema(
+const AffiliateSchema: Schema<IAffiliate> = new Schema(
   {
     firstName: {
       type: String,

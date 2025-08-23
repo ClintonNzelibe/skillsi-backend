@@ -13,7 +13,7 @@ export interface IShortLink extends Document {
   createdAt: Date;
 }
 
-const ShortLinkSchema: Schema = new Schema(
+const ShortLinkSchema: Schema<IShortLink> = new Schema(
   {
     course: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,4 +51,4 @@ const ShortLinkSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("ShortLink", ShortLinkSchema);
+export default mongoose.model<IShortLink>("ShortLink", ShortLinkSchema);

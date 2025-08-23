@@ -43,7 +43,7 @@ export interface ITutor extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const TutorSchema: Schema = new Schema(
+const TutorSchema: Schema<ITutor> = new Schema(
   {
     fName: {
       type: String,
@@ -130,7 +130,7 @@ const TutorSchema: Schema = new Schema(
       type: Number,
       default: 0,
     },
-    totalReview: {
+    totalReviews: {
       type: Number,
       default: 0,
     },

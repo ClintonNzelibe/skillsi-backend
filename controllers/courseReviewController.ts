@@ -7,7 +7,7 @@ import CourseReview from "../models/CourseReview.js";
 // Create review
 const createReview = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId } = req.query;
+    const { courseId } = req.params;
     const { rating, comment } = req.body;
     const userId = req.user?.userId;
     // const tutorId = req.body.tutorId; // could also be fetched via course if needed
@@ -59,7 +59,7 @@ const createReview = async (req: Request, res: Response): Promise<any> => {
 // Fetch user reviews
 const getUserReviews = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId } = req.query;
+    const { courseId } = req.params;
     const userId = req.user?.userId;
 
     // Get current user review regardless of status
