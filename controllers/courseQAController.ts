@@ -73,7 +73,7 @@ const getTutorQuestions = async (req: Request, res: Response): Promise<any> => {
     // const courseIds = courses.map((course) => course._id);
 
     const questions = await CourseQA.find({ course: courseId })
-      .populate("askedBy", "profilePicture fullName email")
+      .populate("user", "profilePicture fullName email")
       .populate("course", "bannerImage title subTitle description tutor");
 
     if (questions.length && tutorId !== questions[0]?.tutor?.toString()) {
