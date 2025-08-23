@@ -20,7 +20,7 @@ async function generateUniqueShortCode() {
 
 const createShortLink = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId } = req.query;
+    const { courseId } = req.params;
     const affiliateId = req.affiliate?.affiliateId;
 
     if (!courseId || !affiliateId) {
@@ -139,7 +139,7 @@ const getTutorAffiliateCourses = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
-    const { courseId } = req.body;
+    const { courseId } = req.params;
     const tutorId = req.tutor?.tutorId;
 
     if (!courseId) {

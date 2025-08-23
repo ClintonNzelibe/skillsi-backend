@@ -69,7 +69,7 @@ const signupAffiliate = async (req: Request, res: Response): Promise<any> => {
 
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: "Tutor registered successfully, Please check your email for OTP",
+      message: "Affiliate registered successfully, Please check your email for OTP",
       email: affiliate.email,
     });
   } catch (error) {
@@ -124,7 +124,7 @@ const verifyEmail = async (req: Request, res: Response): Promise<any> => {
 
       res.status(StatusCodes.OK).json({
         success: true,
-        message: "Email Verified, please proceed to finishing your onboarding",
+        message: "Email Verified, please kindly proceed to login",
       });
     } else {
       res.status(StatusCodes.OK).json({
