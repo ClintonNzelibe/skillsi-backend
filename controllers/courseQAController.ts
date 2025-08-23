@@ -10,13 +10,13 @@ const createQuestion = async (req: Request, res: Response): Promise<any> => {
     const { courseId } = req.params;
     const { question } = req.body;
 
-    const course = await Course.findById(courseId);
+    const course = await Course.findById(courseId);    
 
     const newQuestion = await CourseQA.create({
       course: courseId,
       tutor: course?.tutor,
       question,
-      askedBy: req.user?.userId,
+      user: req.user?.userId,
     });
 
     res.status(StatusCodes.CREATED).json({
