@@ -25,7 +25,7 @@ router.route("/getUserReviews/:courseId").get(authenticateUser, getUserReviews);
 // Get all reviews for tutor's courses
 router
   .route("/getTutorReviews/:courseId")
-  .post(authenticateTutor, getTutorReviews);
+  .get(authenticateTutor, getTutorReviews);
 
 // Update a review (User)
 router
