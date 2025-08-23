@@ -66,14 +66,15 @@ const getUserReviews = async (req: Request, res: Response): Promise<any> => {
     const userReview = await CourseReview.findOne({
       course: courseId,
       user: userId,
-    }).populate("course user tutor");
+    }).populate("user", "fullName email profilePicture");
+    // .populate("course user tutor")
 
     // Get other users' approved reviews only
     const otherReviews = await CourseReview.find({
       course: courseId,
       status: "approved",
       user: { $ne: userId },
-    }).populate("course user tutor");
+    }).populate("user", "fullName email profilePicture");
 
     // Merge: put userReview at top (if exists)
     const reviews = userReview ? [userReview, ...otherReviews] : otherReviews;

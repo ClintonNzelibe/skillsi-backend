@@ -60,7 +60,7 @@ const getShortLink = async (req: Request, res: Response): Promise<any> => {
   try {
     const { shortCode } = req.params;
 
-    const shortLink = await ShortLink.findOne({ shortCode });
+    const shortLink = await ShortLink.findOne({ shortCode }).populate("course");
     if (!shortLink) {
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -68,6 +68,8 @@ const getShortLink = async (req: Request, res: Response): Promise<any> => {
     }
 
     res.json({
+      success: true,
+      message: "Short Link gotten successfully",
       courseId: shortLink.course,
       affiliateId: shortLink.affiliate,
       shortCode: shortLink.shortCode,

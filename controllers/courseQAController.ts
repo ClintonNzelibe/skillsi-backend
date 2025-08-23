@@ -7,7 +7,8 @@ import mongoose from "mongoose";
 // 1. Create Question (User)
 const createQuestion = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { courseId, question } = req.body;
+    const { courseId } = req.params;
+    const { question } = req.body;
 
     const course = await Course.findById(courseId);
 
@@ -82,7 +83,13 @@ const getTutorQuestions = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    res.status(StatusCodes.OK).json({ success: true, message: "Fetched successfully", data: questions });
+    res
+      .status(StatusCodes.OK)
+      .json({
+        success: true,
+        message: "Fetched successfully",
+        data: questions,
+      });
   } catch (error) {
     console.error("Get Tutor Questions Error:", error);
     res
