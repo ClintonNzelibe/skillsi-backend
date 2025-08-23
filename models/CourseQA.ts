@@ -8,6 +8,7 @@ export interface ICourseQA extends Document {
   answer?: string;
   answeredBy?: Types.ObjectId;
   isAnswered: boolean;
+  
   createdAt: Date;
   updatedAt: Date;
 }

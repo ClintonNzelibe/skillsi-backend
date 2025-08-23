@@ -107,7 +107,7 @@ const getUserQuestions = async (req: Request, res: Response): Promise<any> => {
       user: userId,
       course: courseId,
     })
-      .populate("courseId", "title")
+      .populate("course", "title")
       .populate("answeredBy", "fName lName email profilePicture");
 
     // 2. Other users' questions
@@ -115,7 +115,7 @@ const getUserQuestions = async (req: Request, res: Response): Promise<any> => {
       user: { $ne: userId },
       course: courseId,
     })
-      .populate("courseId", "title")
+      .populate("course", "title")
       .populate("answeredBy", "fName lName email profilePicture");
 
     // 3. Merge: user first, others next
