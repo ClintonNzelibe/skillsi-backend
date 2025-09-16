@@ -10,8 +10,6 @@ import {
   deletePaymentMethod,
   getAllPaymentMethods,
   coursePayment,
-  getAllPaymentHistoryUser,
-  getSinglePaymentHistoryUser,
 } from "../controllers/paymentController.js";
 
 // Get all payment methods
@@ -29,12 +27,6 @@ router
 
 router.route("/coursePayment").post(authenticateUser, coursePayment);
 
-router
-  .route("/paymentHistoryUser")
-  .post(authenticateUser, getAllPaymentHistoryUser);
-
-router
-  .route("/paymentHistoryUser/:id")
-  .get(authenticateUser, getSinglePaymentHistoryUser);
+router.route("/coursePayment").post(authenticateUser, coursePayment);
 
 export default router;

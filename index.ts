@@ -50,6 +50,7 @@ import courseReviewRouter from "./routes/courseReviewRoutes.js"
 import purchasedCourseRouter from "./routes/purchasedCourseRoutes.js";
 import wishListRouter from "./routes/wishListRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
+import tutorAndAffiliatePaymentRouter from "./routes/tutorAndAffiliatePaymentRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import notificationTokenRouter from "./routes/notificationTokenRoutes.js";
@@ -215,6 +216,7 @@ app.use("/api/v1/courseReview", courseReviewRouter);
 app.use("/api/v1/purchasedCourse", purchasedCourseRouter);
 app.use("/api/v1/wishList", wishListRouter);
 app.use("/api/v1/payment", paymentRouter);
+app.use("/api/v1/tutorAndAffiliatePayment", tutorAndAffiliatePaymentRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/notification", notificationRouter);
 app.use("/api/v1/notificationToken", notificationTokenRouter);

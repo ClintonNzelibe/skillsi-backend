@@ -2,8 +2,7 @@ import express from "express";
 const router = express.Router();
 
 import {
-  authenticateTutor,
-  authenticateUser,
+  authenticateAffiliate,
 } from "../middleware/authentication.js";
 
 import {
@@ -18,9 +17,9 @@ import {
 
 router
   .route("/updateTutorProfile")
-  .patch(authenticateTutor, updateAffiliateProfile);
+  .patch(authenticateAffiliate, updateAffiliateProfile);
 
-router.route("/currentTutor").get(authenticateTutor, currentAffiliate);
+router.route("/currentTutor").get(authenticateAffiliate, currentAffiliate);
 
 router.route("/forgotPassword").post(forgotPassword);
 
@@ -30,6 +29,6 @@ router.route("/resetPassword").patch(resetPassword);
 
 router.route("/resendToken").post(resendToken);
 
-router.route("/changePassword").patch(authenticateTutor, changePassword);
+router.route("/changePassword").patch(authenticateAffiliate, changePassword);
 
 export default router;

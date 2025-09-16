@@ -9,4 +9,4 @@ export const GOOGLE_DRIVE_APIKEY = process.env.GOOGLE_DRIVE_APIKEY
 export const PAYSTACK_SECRET_KEY =
   process.env.NODE_ENV === "production"
     ? process.env.PAYSTACK_SECRET_LIVE_KEY
-    : process.env.PAYSTACK_SECRET_TEST_KEY || "";
+    : process.env.PAYSTACK_SECRET_LIVE_KEY || "";

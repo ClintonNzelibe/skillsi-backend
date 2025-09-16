@@ -19,7 +19,11 @@ import checkPermissions from "./checkPermissions.js";
 import sendVerificationEmail from "./sendVerificationEmail.js";
 import sendPasswordEmail from "./sendPasswordEmail.js";
 import sendResetPasswordEmail from "./sendResetPasswordEmail.js";
-import createHash from "./createHash.js";
+import createHash, {
+  hashAccountNumber,
+  encrypt,
+  decrypt,
+} from "./createHash.js";
 
 export {
   createUserJWT,
@@ -40,4 +44,7 @@ export {
   sendPasswordEmail,
   sendResetPasswordEmail,
   createHash,
+  hashAccountNumber,
+  encrypt,
+  decrypt,
 };

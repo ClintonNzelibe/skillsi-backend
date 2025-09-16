@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IPaymentHistory extends Document {
   customer: Types.ObjectId;
-  customerModel: "User" | "Admin" | "Affiliate";
+  customerModel: "User" | "Tutor" | "Affiliate";
   course?: Types.ObjectId;
   reference: string;
   type: "credit" | "debit" | "refund";
@@ -34,7 +34,7 @@ const PaymentHistorySchema: Schema<IPaymentHistory> = new Schema(
     customerModel: {
       type: String,
       required: [true, "Please provider customer model"],
-      enum: ["User", "Admin", "Affiliate"], // models it can point to
+      enum: ["User", "Tutor", "Affiliate"],
     },
     course: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,9 +1,6 @@
-import crypto from "crypto";
 import mongoose, { Document, Schema, Types } from "mongoose";
 
-// Example Mongoose schema for PaymentMethod
-
-interface IPaymentMethodDocument extends Document {
+interface IPaymentMethod extends Document {
   customer: Types.ObjectId;
   customerModel: "User" | "Admin" | "Affiliate";
   authorizationCode: string;
@@ -17,7 +14,7 @@ interface IPaymentMethodDocument extends Document {
   isDefault: boolean;
 }
 
-const PaymentMethodSchema = new Schema<IPaymentMethodDocument>(
+const PaymentMethodSchema: Schema<IPaymentMethod> = new Schema<IPaymentMethod>(
   {
     customer: {
       type: mongoose.Schema.Types.ObjectId,
@@ -67,12 +64,10 @@ const PaymentMethodSchema = new Schema<IPaymentMethodDocument>(
       default: false,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model<IPaymentMethodDocument>(
+export default mongoose.model<IPaymentMethod>(
   "PaymentMethod",
   PaymentMethodSchema
 );

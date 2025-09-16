@@ -7,6 +7,10 @@ import {
   InitializePayment,
   PaystackRefund,
   PaystackVerify,
+  PaystackTokenizeBank,
+  getAccountName,
+  initiateWithdrawal,
+  finalizeTransfer
 } from "./Paystack.js";
 
 export {
@@ -16,4 +20,8 @@ export {
   InitializePayment,
   PaystackRefund,
   PaystackVerify,
+  PaystackTokenizeBank,
+  getAccountName,
+  initiateWithdrawal,
+  finalizeTransfer
 };
