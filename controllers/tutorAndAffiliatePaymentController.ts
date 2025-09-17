@@ -184,8 +184,6 @@ const getAllBankPaymentMethods = async (
   try {
     const customerModel = req.query.customerModel as "Tutor" | "Affiliate";
 
-    console.log(customerModel);
-
     let customerId;
     if (customerModel === "Tutor") {
       customerId = req.tutor?.tutorId;
@@ -212,9 +210,12 @@ const getAllBankPaymentMethods = async (
     }
 
     const bankDetails = methods.map((bank) => ({
-      ...bank.toObject(),
+      // ...bank.toObject(),
+      _id: bank._id,
+      bankName: bank.bankName,
       accountNumber: bank.decryptAccountNumber(),
       accountName: bank.decryptAccountName(),
+      isDefault: bank.isDefault
     }));
 
     res.status(StatusCodes.OK).json({
