@@ -1,7 +1,7 @@
 import { Router } from "express";
 const router = Router();
 
-import { authenticateUserOrTutorOrAdmin } from "../middleware/authentication.js";
+import { authenticateGeneral } from "../middleware/authentication.js";
 
 import {
   addBankAccount,
@@ -12,15 +12,15 @@ import {
 
 router
   .route("/withdrawalFromBalance")
-  .post(authenticateUserOrTutorOrAdmin, withdrawalFromBalance);
+  .post(authenticateGeneral, withdrawalFromBalance);
 
 router
   .route("/getAllBankPaymentMethods")
-  .get(authenticateUserOrTutorOrAdmin, getAllBankPaymentMethods);
+  .get(authenticateGeneral, getAllBankPaymentMethods);
 
 router
   .route("/addBankAccount")
-  .post(authenticateUserOrTutorOrAdmin, addBankAccount);
+  .post(authenticateGeneral, addBankAccount);
 
 router.route("/accountName").post(accountName);
 

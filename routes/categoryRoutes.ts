@@ -2,7 +2,7 @@ import express from "express";
 
 import {
   authenticateAdmin,
-  authenticateUserOrTutorOrAdmin,
+  authenticateGeneral,
 } from "../middleware/authentication.js";
 
 import {
@@ -13,7 +13,7 @@ import {
 
 const router = express.Router();
 
-router.route("/").post(authenticateAdmin, createCategory).get(authenticateUserOrTutorOrAdmin, fetchCategories);
+router.route("/").post(authenticateAdmin, createCategory).get(authenticateGeneral, fetchCategories);
 router.route("/:id").patch(authenticateAdmin, editCategory);
 
 export default router;

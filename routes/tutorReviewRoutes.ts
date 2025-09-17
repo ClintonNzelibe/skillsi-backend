@@ -10,17 +10,17 @@ import {
 
 import {
   authenticateUser,
-  authenticateUserOrTutorOrAdmin,
+  authenticateGeneral,
 } from "../middleware/authentication.js";
 
 router
   .route("/")
   .post(authenticateUser, createTutorReview)
-  .get(authenticateUserOrTutorOrAdmin, fetchTutorReviews);
+  .get(authenticateGeneral, fetchTutorReviews);
 
 router
   .route("/:reviewId")
   .patch(authenticateUser, editTutorReview)
-  .delete(authenticateUserOrTutorOrAdmin, deleteTutorReview);
+  .delete(authenticateGeneral, deleteTutorReview);
 
 export default router;

@@ -275,7 +275,7 @@ const authorizePermissions = (...roles: string[]) => {
 };
 
 // Custom middleware that tries both authentication methods
-const authenticateUserOrTutorOrAdmin = (req: any, res: any, next: any) => {
+const authenticateGeneral = (req: any, res: any, next: any) => {
   try {
     authenticateUser(req, res, (err: any) => {
       if (!err && req.user) {
@@ -287,17 +287,28 @@ const authenticateUserOrTutorOrAdmin = (req: any, res: any, next: any) => {
           if (!err && req.tutor) {
             return next();
           }
-
           try {
-            authenticateAdmin(req, res, (err: any) => {
-              if (!err && req.admin) {
+            authenticateAffiliate(req, res, (err: any) => {
+              if (!err && req.tutor) {
                 return next();
               }
+              try {
+                authenticateAdmin(req, res, (err: any) => {
+                  if (!err && req.admin) {
+                    return next();
+                  }
 
-              return res.status(StatusCodes.UNAUTHORIZED).json({
-                success: false,
-                message: "Authentication required",
-              });
+                  return res.status(StatusCodes.UNAUTHORIZED).json({
+                    success: false,
+                    message: "Authentication required",
+                  });
+                });
+              } catch {
+                return res.status(StatusCodes.UNAUTHORIZED).json({
+                  success: false,
+                  message: "Authentication required",
+                });
+              }
             });
           } catch {
             return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -327,5 +338,5 @@ export {
   authenticateAdmin,
   authenticateAffiliate,
   authorizePermissions,
-  authenticateUserOrTutorOrAdmin,
+  authenticateGeneral,
 };

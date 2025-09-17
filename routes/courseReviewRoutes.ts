@@ -4,7 +4,7 @@ const router = express.Router();
 import {
   authenticateTutor,
   authenticateUser,
-  authenticateUserOrTutorOrAdmin,
+  authenticateGeneral,
 } from "../middleware/authentication.js";
 
 import {
@@ -31,7 +31,7 @@ router
 router
   .route("/:reviewId")
   .patch(authenticateUser, updateReview)
-  .delete(authenticateUserOrTutorOrAdmin, deleteReview);
+  .delete(authenticateGeneral, deleteReview);
 
 // Approve a review (Tutor)
 router
