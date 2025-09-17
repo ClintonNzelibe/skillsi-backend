@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import Affiliate from "../models/Affiliate.js";
+import PaymentHistory from "../models/PaymentHistory.js";
 import {
   DeleteFileFromCloudinary,
   PasswordValidation,
@@ -335,12 +336,10 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
 
     const affiliate = await Affiliate.findOne({ email }).select("+password");
     if (!affiliate) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({
-          success: false,
-          message: "Affiliate not found with this email",
-        });
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Affiliate not found with this email",
+      });
     }
 
     const isPasswordCorrect = await affiliate.comparePassword(password);
@@ -380,6 +379,110 @@ const changePassword = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const dashboardData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { dataType, year } = req.query;
+    const affiliateId = req.affiliate?.affiliateId;
+    const affiliate = await Affiliate.findById(affiliateId);
+
+    if (!affiliate) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Affiliate doesn't exist",
+      });
+    }
+
+    let data: any = {};
+    if (dataType === "earnings") {
+      data = {
+        balance: affiliate.balance,
+        totalRevenue: affiliate.totalRevenue,
+        totalWithdrawals: affiliate.totalWithdrawals,
+        pendingWithdrawals: affiliate.pendingWithdrawals,
+      };
+    } else if (dataType === "overview") {
+      data = {
+        balance: affiliate.balance,
+        totalRevenue: affiliate.totalRevenue,
+        totalCoursesSold: affiliate.totalCoursesSold,
+        totalCoursesPromoted: affiliate.totalCoursesPromoted,
+      };
+    }
+
+    let chart: any = null;
+    // === Earnings Chart ===
+    if (dataType === "overview") {
+      const selectedYear = year
+        ? parseInt(year as string, 10)
+        : new Date().getFullYear();
+
+      const payments = await PaymentHistory.aggregate([
+        {
+          $match: {
+            customer: affiliate._id,
+            customerModel: "Affiliate",
+            type: "credit", // only money coming in
+            createdAt: {
+              $gte: new Date(`${selectedYear}-01-01T00:00:00.000Z`),
+              $lte: new Date(`${selectedYear}-12-31T23:59:59.999Z`),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $month: "$createdAt" },
+            total: { $sum: "$amount" },
+          },
+        },
+      ]);
+
+      // Create 12 months (Jan - Dec) with 0 defaults
+      const monthlyEarnings: { [key: string]: number } = {};
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      months.forEach((m) => (monthlyEarnings[m] = 0));
+
+      payments.forEach((p) => {
+        //   const monthIndex = p._id - 1; // Mongo month starts at 1
+        //   monthlyEarnings[months[monthIndex]] = p.total;
+        // });
+        const monthIndex = (p._id ?? 1) - 1; // Ensure _id is not undefined
+        if (monthIndex >= 0 && monthIndex < months.length) {
+          monthlyEarnings[months[monthIndex]!] = p.total;
+        }
+      });
+
+      chart = { year: selectedYear, monthlyEarnings };
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Dashboard data fetched successfully",
+      data: {
+        ...data,
+        ...(chart && { chart }), // only add chart if it exists
+      },
+    });
+  } catch (error) {
+    console.error("Error getting dashboard  data", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   updateAffiliateProfile,
   currentAffiliate,
@@ -388,4 +491,5 @@ export {
   resetPassword,
   resendToken,
   changePassword,
+  dashboardData,
 };

@@ -449,6 +449,48 @@ const getTutorProfile = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const dashboardData = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { dataType } = req.query;
+    const tutorId = req.tutor?.tutorId;
+    const tutor = await Tutor.findById(tutorId);
+
+    if (!tutor) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Tutor doesn't exist",
+      });
+    }
+
+    let data: any = {};
+    if (dataType === "earnings") {
+      data = {
+        balance: tutor.balance,
+        totalRevenue: tutor.totalRevenue,
+        totalWithdrawals: tutor.totalWithdrawals,
+        pendingWithdrawals: tutor.pendingWithdrawals,
+      };
+    } else if (dataType === "courseOverview") {
+      data = {
+        totalRevenue: tutor.totalRevenue,
+        totalCourses: tutor.totalCourses,
+        totalEnrollments: tutor.totalEnrollments,
+      };
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Dashboard data fetched successfully",
+      data,
+    });
+  } catch (error) {
+    console.error("Error getting dashboard  data", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   updateTutorProfile,
   currentTutor,
@@ -458,4 +500,5 @@ export {
   resendToken,
   changePassword,
   getTutorProfile,
+  dashboardData,
 };

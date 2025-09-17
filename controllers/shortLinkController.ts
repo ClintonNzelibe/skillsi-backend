@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import { nanoid } from "nanoid";
+import Affiliate from "../models/Affiliate.js";
 import Course from "../models/Course.js";
 import ShortLink from "../models/ShortLink.js";
 
@@ -23,28 +24,48 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
     const { courseId } = req.params;
     const affiliateId = req.affiliate?.affiliateId;
 
+    const affiliate = await Affiliate.findById(affiliateId);
+
+    if (!affiliate) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: "Affiliate doesn't exist",
+      });
+    }
+
     if (!courseId || !affiliateId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Missing courseId or affiliateId" });
     }
 
-    let link = await ShortLink.findOne({ courseId, affiliateId });
+    const link = await ShortLink.findOne({
+      course: courseId,
+      affiliate: affiliateId,
+    });
 
-    if (!link) {
-      const shortCode = await generateUniqueShortCode();
-
-      link = await ShortLink.create({
-        course: courseId,
-        affiliate: affiliateId,
-        shortCode,
+    if (link) {
+      return res.status(StatusCodes.OK).json({
+        success: false,
+        message: "You already created a link for this course",
       });
     }
+
+    const shortCode = await generateUniqueShortCode();
+
+    await ShortLink.create({
+      course: courseId,
+      affiliate: affiliateId,
+      shortCode,
+    });
+
+    affiliate.totalCoursesPromoted = (affiliate.totalCoursesPromoted || 0) + 1;
+    await affiliate.save();
 
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Short link created successfully",
-      shortCode: link.shortCode,
+      shortCode,
       // shortUrl: `https://yourapp.com/r/${link.shortCode}`,
     });
   } catch (error) {

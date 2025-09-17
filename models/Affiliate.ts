@@ -16,10 +16,12 @@ export interface IAffiliate extends Document {
   lastLoggedIn?: Date;
   loggedInTimes?: number;
   status?: "pending" | "approved" | "rejected" | "suspended";
-  totalRevenue?: number;
   balance: number;
+  totalRevenue?: number;
   totalWithdrawals?: number;
   pendingWithdrawals?: number;
+  totalCoursesSold?: number;
+  totalCoursesPromoted?: number;
   verificationToken?: string;
   verificationTokenExpirationDate?: Date;
   verified?: Date;
@@ -87,9 +89,35 @@ const AffiliateSchema: Schema<IAffiliate> = new Schema(
       default:
         "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultProfilePicture.png",
     },
+    balance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalRevenue: {
       type: Number,
       default: 0,
+      min: 0,
+    },
+    totalWithdrawals: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pendingWithdrawals: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalCoursesSold: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalCoursesPromoted: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     isProfileComplete: {
       type: Boolean,
@@ -106,10 +134,6 @@ const AffiliateSchema: Schema<IAffiliate> = new Schema(
       type: String,
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "approved",
-    },
-    balance: {
-      type: Number,
-      default: 0,
     },
     numberOfEdits: { type: Number, default: 0 },
     totalEnrollments: {

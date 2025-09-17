@@ -15,6 +15,7 @@ import {
   resendToken,
   changePassword,
   getTutorProfile,
+  dashboardData,
 } from "../controllers/tutorController.js";
 
 router
@@ -36,5 +37,7 @@ router.route("/changePassword").patch(authenticateTutor, changePassword);
 router
   .route("/getTutorProfile/:tutorId")
   .get(authenticateUser, getTutorProfile);
+
+router.route("/dashboardData").get(authenticateTutor, dashboardData);
 
 export default router;

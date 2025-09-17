@@ -1,9 +1,7 @@
 import express from "express";
 const router = express.Router();
 
-import {
-  authenticateAffiliate,
-} from "../middleware/authentication.js";
+import { authenticateAffiliate } from "../middleware/authentication.js";
 
 import {
   updateAffiliateProfile,
@@ -13,6 +11,7 @@ import {
   resetPassword,
   resendToken,
   changePassword,
+  dashboardData,
 } from "../controllers/affiliateController.js";
 
 router
@@ -30,5 +29,7 @@ router.route("/resetPassword").patch(resetPassword);
 router.route("/resendToken").post(resendToken);
 
 router.route("/changePassword").patch(authenticateAffiliate, changePassword);
+
+router.route("/dashboardData").get(authenticateAffiliate, dashboardData);
 
 export default router;

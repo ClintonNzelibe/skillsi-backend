@@ -23,15 +23,17 @@ export interface ITutor extends Document {
   rating?: number;
   totalStudents?: number;
   totalReviews?: number;
-  totalRevenue?: number;
   totalCourses?: number;
-  numberOfEdits?: number;
+  balance: number;
+  totalRevenue?: number;
+  totalWithdrawals?: number;
+  pendingWithdrawals?: number;
   totalEnrollments?: number;
+  numberOfEdits?: number;
   isProfileComplete?: boolean;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
   status?: "pending" | "approved" | "rejected" | "suspended";
-  balance: number;
   verificationToken?: string;
   verificationTokenExpirationDate?: Date;
   verified?: Date;
@@ -125,24 +127,23 @@ const TutorSchema: Schema<ITutor> = new Schema(
     rating: {
       type: Number,
       default: 0,
+      min: 0,
     },
     totalStudents: {
       type: Number,
       default: 0,
+      min: 0,
     },
     totalReviews: {
       type: Number,
       default: 0,
-    },
-    totalRevenue: {
-      type: Number,
-      default: 0,
+      min: 0,
     },
     totalCourses: {
       type: Number,
       default: 0,
+      min: 0,
     },
-
     isProfileComplete: {
       type: Boolean,
       default: false,
@@ -153,6 +154,7 @@ const TutorSchema: Schema<ITutor> = new Schema(
     loggedInTimes: {
       type: Number,
       default: 0,
+      min: 0,
     },
     status: {
       type: String,
@@ -162,12 +164,29 @@ const TutorSchema: Schema<ITutor> = new Schema(
     balance: {
       type: Number,
       default: 0,
+      min: 0,
     },
-    numberOfEdits: { type: Number, default: 0 },
+    totalRevenue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalWithdrawals: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pendingWithdrawals: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalEnrollments: {
       type: Number,
       default: 0,
+      min: 0,
     },
+    numberOfEdits: { type: Number, default: 0 },
     verificationToken: { type: String },
     verificationTokenExpirationDate: { type: Date },
     verified: { type: Date, default: Date.now },
