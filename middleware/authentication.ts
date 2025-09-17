@@ -289,7 +289,7 @@ const authenticateGeneral = (req: any, res: any, next: any) => {
           }
           try {
             authenticateAffiliate(req, res, (err: any) => {
-              if (!err && req.tutor) {
+              if (!err && req.affiliate) {
                 return next();
               }
               try {
