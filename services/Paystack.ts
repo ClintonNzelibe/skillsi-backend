@@ -24,8 +24,8 @@ export const InitializePayment = async (
   if (!email || !amount || !purpose) {
     throw new Error("Email, amount, and purpose are required");
   }
-  const callback_url = `${process.env.CLIENT_URL}${
-    callbackPath || "/payment/callback"
+  const callback_url = `${process.env.CLIENT_URL || "localhost:5173"}${
+    callbackPath || "/payment/success"
   }`;
 
   const amountInKobo = amount * 100; // Paystack expects kobo
@@ -60,6 +60,9 @@ export const PaystackRefund = async (reference: string, customerId: string) => {
 
   const refundData = response.data.data;
   const paymentData = refundData.authorization;
+
+  console.log("Refund Data: ", refundData, "Payment Data:", paymentData);
+  
 
   // Store refund in PaymentHistory
   await PaymentHistory.create({

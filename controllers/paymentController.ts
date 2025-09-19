@@ -63,11 +63,11 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
 
     // Parse JSON payload after verifying signature
     const event = JSON.parse(payload.toString());
-    console.log("Received Paystack event:", event);
-    console.log("Event type:", event.event);
-    console.log("Event data:", event.data);
-    console.log("Event metadata:", event.data.metadata);
-    console.log("Event reference:", event.data.reference);
+    // console.log("Received Paystack event:", event);
+    // console.log("Event type:", event.event);
+    // console.log("Event data:", event.data);
+    // console.log("Event metadata:", event.data.metadata);
+    // console.log("Event reference:", event.data.reference);
     // Handle the event based on its type
     if (event.event === "charge.success") {
       const metadata = event.data.metadata;
@@ -111,7 +111,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
           isDefault: isFirstPaymentMethod,
         });
 
-        console.log(`Card tokenized for user ${customerId}`);
+        // console.log(`Card tokenized for user ${customerId}`);
 
         // Immediately refund the ₦100 charge
         try {
@@ -146,7 +146,7 @@ const verifyAndTokenizeCard = async (
   const paymentStatus = data.status;
   const paymentData = data.authorization;
 
-  console.log("Complete data:", data, "Payment status:", paymentStatus);
+  // console.log("Complete data:", data, "Payment status:", paymentStatus);
 
   // Always log the attempt
   await PaymentHistory.create({
@@ -180,11 +180,11 @@ const verifyAndTokenizeCard = async (
 
   const { authorization, id: transactionId, metadata } = data;
 
-  if (!authorization?.reusable) {
-    throw new Error("Card not reusable");
-  }
+  // if (!authorization?.reusable) {
+  //   throw new Error("Card not reusable");
+  // }
 
-  console.log(authorization, transactionId);
+  // console.log(authorization, transactionId);
 
   if (authorization.reusable) {
     // Save reusable card authorization_code
@@ -199,7 +199,7 @@ const verifyAndTokenizeCard = async (
       cardType: authorization.card_type,
       cardHolderName: authorization.account_name || "Unknown",
       customerModel: metadata.customerModel || "User",
-      transactionType: metadata.transactionType || "course_payment",
+      transactionType: metadata.transactionType || "card_tokenization",
     };
   }
 
