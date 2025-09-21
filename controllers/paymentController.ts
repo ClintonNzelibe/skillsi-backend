@@ -210,6 +210,8 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.user?.userId;
     const email = req.user?.email;
+    const callback_url =
+      req.headers?.origin || "https://skillsi-tutor.vercel.app";
 
     // Always charge ₦100 for tokenization
     const amount = 100;
@@ -222,7 +224,8 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
       "card_tokenization",
       "User",
       "/payment/callback",
-      {}
+      {},
+      callback_url
     );
 
     res.status(StatusCodes.OK).json({

@@ -4,24 +4,32 @@ const router = Router();
 import { authenticateGeneral } from "../middleware/authentication.js";
 
 import {
-  addBankAccount,
   accountName,
-  withdrawalFromBalance,
+  addBankAccount,
   getAllBankPaymentMethods,
+  withdrawalFromBalance,
+  confirmWithdrawal,
+  resendWithdrawalOtp,
 } from "../controllers/tutorAndAffiliatePaymentController.js";
 
-router
-  .route("/withdrawalFromBalance")
-  .post(authenticateGeneral, withdrawalFromBalance);
+router.route("/accountName").post(accountName);
+
+router.route("/addBankAccount").post(authenticateGeneral, addBankAccount);
 
 router
   .route("/getAllBankPaymentMethods")
   .get(authenticateGeneral, getAllBankPaymentMethods);
 
 router
-  .route("/addBankAccount")
-  .post(authenticateGeneral, addBankAccount);
+  .route("/withdrawalFromBalance")
+  .post(authenticateGeneral, withdrawalFromBalance);
 
-router.route("/accountName").post(accountName);
+router
+  .route("/confirmWithdrawal/:pendingId")
+  .post(authenticateGeneral, confirmWithdrawal);
+
+router
+  .route("/resendWithdrawalOtp/:pendingId")
+  .patch(authenticateGeneral, resendWithdrawalOtp);
 
 export default router;

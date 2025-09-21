@@ -1,8 +1,9 @@
 import axios from "axios";
 import PaymentHistory from "../models/PaymentHistory.js";
-import Affiliate from "../models/Affiliate.js";
 import Tutor from "../models/Tutor.js";
-import { PAYSTACK_SECRET_KEY } from "../utils/index.js";
+import Affiliate from "../models/Affiliate.js";
+import PendingTransfer from "../models/PendingTransfer.js";
+import { PAYSTACK_SECRET_KEY, createHash } from "../utils/index.js";
 
 const paystack = axios.create({
   baseURL: "https://api.paystack.co",
@@ -19,12 +20,13 @@ export const InitializePayment = async (
   purpose: string,
   customerModel: "User" | "Admin" | "Affiliate" | string,
   callbackPath: string,
-  extraMetadata: Record<string, any> = {}
+  extraMetadata: Record<string, any> = {},
+  callbackUrl: string
 ): Promise<{ authorization_url: string; reference: string }> => {
   if (!email || !amount || !purpose) {
     throw new Error("Email, amount, and purpose are required");
   }
-  const callback_url = `${process.env.CLIENT_URL || "localhost:5173"}${
+  const callback_url = `${callbackUrl || "localhost:5173"}${
     callbackPath || "/payment/success"
   }`;
 
@@ -62,7 +64,6 @@ export const PaystackRefund = async (reference: string, customerId: string) => {
   const paymentData = refundData.authorization;
 
   console.log("Refund Data: ", refundData, "Payment Data:", paymentData);
-  
 
   // Store refund in PaymentHistory
   await PaymentHistory.create({
@@ -159,13 +160,14 @@ export const getAccountName = async (
 };
 
 export const initiateWithdrawal = async (
-  recipientCode: string,
-  amount: number,
-  customerId: string,
-  customerModel: string,
-  bankName: string
+  pendingId: string,
+  customerModel: "Tutor" | "Affiliate",
+  verificationToken: string
   // transactionType: string
 ) => {
+  //   const session = await mongoose.startSession();
+  // session.startTransaction();
+
   // start withdrawal flow
   let session;
 
@@ -177,34 +179,49 @@ export const initiateWithdrawal = async (
   session.startTransaction();
 
   try {
+    const pending = await PendingTransfer.findById(pendingId).session(session);
+    if (!pending) throw new Error("Pending withdrawal not found");
+
+    if (
+      pending.verificationToken !== createHash(verificationToken) ||
+      pending.verificationTokenExpirationDate < new Date()
+    ) {
+      throw new Error("Invalid or expired OTP");
+    }
+
     // 1. Find user
     let customer;
-
     if (customerModel === "Tutor") {
-      customer = await Tutor.findById(customerId).session(session);
+      customer = await Tutor.findById(pending.customer).session(session);
     } else if (customerModel === "Affiliate") {
-      customer = await Affiliate.findById(customerId).session(session);
+      customer = await Affiliate.findById(pending.customer).session(session);
     } else {
       throw new Error("Invalid Customer Model");
     }
 
-    if (!customer) throw new Error("User not found");
+    // Check balance first
+    // const customer =
+    //   customerModel === "Tutor"
+    //     ? await Tutor.findById(customerId)
+    //     : await Affiliate.findById(customerId);
+
+    if (!customer) throw new Error(`${customerModel} not found`);
 
     // 2. Check balance
-    if (customer.balance < amount) {
+    if (customer.balance < pending.amount) {
       throw new Error("Insufficient balance");
     }
 
     // 3. Deduct balance first
-    customer.balance -= amount;
+    customer.balance -= pending.amount;
     await customer.save({ session });
 
     // 4. Call Paystack initiate transfer
     const response = await paystack.post("/transfer", {
       source: "balance",
       reason: "Withdrawal",
-      amount: amount * 100, // Paystack expects kobo
-      recipient: recipientCode,
+      amount: pending.amount * 100, // Paystack expects kobo
+      recipient: pending.recipientCode,
     });
 
     const transferData = response.data.data;
@@ -212,23 +229,30 @@ export const initiateWithdrawal = async (
 
     // 5. Optionally record transaction
     await PaymentHistory.create({
-      customer: customerId,
-      customerModel: customerModel as "User" | "Tutor" | "Affiliate",
-      amount,
+      customer: pending.customer,
+      customerModel: pending.customerModel as "Tutor" | "Affiliate",
+      amount: pending.amount,
       currency: transferData.currency || "NGN",
       type: "debit",
       status: transferData.status === "processed" ? "success" : "pending",
       reference: transferData.reference,
       transactionId: transferData.id,
       transactionType:
-        customerModel === "Tutor" ? "tutor_withdrawal" : "affiliate_withdrawal",
-      bank: bankName,
+        pending.customerModel === "Tutor"
+          ? "tutor_withdrawal"
+          : "affiliate_withdrawal",
+      bank: transferData.recipient?.details?.bank_name || "bank",
       gatewayResponse: transferData.gateway_response,
       ipAddress: transferData.ip_address,
       channel: "bank_transfer",
       paidAt: transferData.createdAt,
     });
     // { session }
+
+    // Mark pending as processed
+    pending.status = "processing";
+    pending.transferCode = transferData.transfer_code;
+    await pending.save({ session });
 
     await session.commitTransaction();
     session.endSession();
@@ -245,19 +269,15 @@ export const initiateWithdrawal = async (
   }
 };
 
-
-export const finalizeTransfer = async (
-  transferCode: string,
-  otp: string,
-) => {
-  try{ 
-  const response = await paystack.post("/transfer/finalize_transfer", {
+export const finalizeTransfer = async (transferCode: string, otp: string) => {
+  try {
+    const response = await paystack.post("/transfer/finalize_transfer", {
       transfer_code: transferCode,
       otp,
     });
 
-  return response.data;
-  }catch (error: any) {
+    return response.data;
+  } catch (error: any) {
     throw new Error(error.response?.data?.message || error.message);
   }
-}
+};

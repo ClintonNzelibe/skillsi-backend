@@ -19,6 +19,7 @@ import checkPermissions from "./checkPermissions.js";
 import sendVerificationEmail from "./sendVerificationEmail.js";
 import sendPasswordEmail from "./sendPasswordEmail.js";
 import sendResetPasswordEmail from "./sendResetPasswordEmail.js";
+import sendPaymentVerificationEmail from "./sendPaymentVerificationEmail.js";
 import createHash, {
   hashAccountNumber,
   encrypt,
@@ -43,6 +44,7 @@ export {
   sendVerificationEmail,
   sendPasswordEmail,
   sendResetPasswordEmail,
+  sendPaymentVerificationEmail,
   createHash,
   hashAccountNumber,
   encrypt,

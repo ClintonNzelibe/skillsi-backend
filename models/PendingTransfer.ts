@@ -3,9 +3,12 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 interface IPendingTransfer extends Document {
   customer: Types.ObjectId;
   customerModel: "Tutor" | "Affiliate";
-  transferCode: string;
+  transferCode?: string;
   amount: number;
   recipientCode: string;
+  verificationToken: string; // store OTP
+  verificationTokenExpirationDate: Date; // expiration (e.g., 10 mins)
+  verificationResendAttempts: number;
   status:
     | string
     | "pending_otp"
@@ -31,7 +34,7 @@ const PendingTransferSchema: Schema<IPendingTransfer> =
       },
       transferCode: {
         type: String,
-        required: [true, "Please provide transfer code"],
+        // required: [true, "Please provide transfer code"],
         default: "",
       },
       amount: {
@@ -42,6 +45,9 @@ const PendingTransferSchema: Schema<IPendingTransfer> =
         type: String,
         required: [true, "please provider recipient code"],
       },
+      verificationToken: { type: String },
+      verificationTokenExpirationDate: { type: Date },
+      verificationResendAttempts: { type: Number, default: 0 },
       status: {
         type: String,
         required: [true, "Please provide transfer status"],
@@ -58,3 +64,8 @@ const PendingTransferSchema: Schema<IPendingTransfer> =
     },
     { timestamps: true }
   );
+
+export default mongoose.model<IPendingTransfer>(
+  "PendingTransfer",
+  PendingTransferSchema
+);

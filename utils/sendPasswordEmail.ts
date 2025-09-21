@@ -25,7 +25,7 @@ const sendPasswordEmail = async ({
 
                           <h6 style="font-size: 1.2rem;">Hello, ${fName}</h6>
 
-                          <p>Thank you for registering with CAMP. Below is your temporary password:</p>
+                          <p>Thank you for registering with Skillsi. Below is your temporary password:</p>
 
                           <p>Your Password: <b>${password}</b></p>
 

@@ -23,7 +23,7 @@ const sendVerificationEmail = async ({
 
                           <h6 style="font-size: 1.2rem;">Hello,</h6>
 
-                          <p class="message-font">Thank you for registering with CAMP. Your security is our top priority, and to ensure the protection of your account, we have initiated the process of verifying your identity.
+                          <p class="message-font">Thank you for registering with Skillsi. Your security is our top priority, and to ensure the protection of your account, we have initiated the process of verifying your identity.
                           </p> 
 
                           <p>To complete the registration process, please copy the code below to verify your email address.</p>
