@@ -35,6 +35,7 @@ interface ICourse extends Document {
   numberOfLessons?: number;
   totalDuration?: number;
   approveStatus?: CourseStatus;
+  shortCode?: string;
 }
 
 // Course Schema
@@ -206,6 +207,11 @@ const CourseSchema: Schema<ICourse> = new Schema(
       enum: ["live", "rejected", "pending"],
       default: "live",
       required: [true, "Please provide approval status"],
+    },
+    shortCode: {
+      type: String,
+      // required: [true, "Please provide the short code"],
+      unique: true,
     },
   },
   { timestamps: true }

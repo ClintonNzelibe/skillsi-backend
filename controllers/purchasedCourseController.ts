@@ -59,7 +59,7 @@ const fetchSinglePaidCourseUser = async (
     if (!userId || !courseId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "userId and courseId are required" });
+        .json({ success: false, message: "User Id and Course Id are required" });
     }
 
     const paidCourse = await PurchasedCourse.findOne({
@@ -82,12 +82,12 @@ const fetchSinglePaidCourseUser = async (
     }
 
     // Fetch modules for the course
-    const modules = await CourseModule.find({ courseId });
+    const modules = await CourseModule.find({ course: courseId });
 
     // Attach lessons to each module
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
-        const lessons = await CourseLesson.find({ moduleId: module._id });
+        const lessons = await CourseLesson.find({ module: module._id });
         return {
           ...module.toObject(),
           lessons,

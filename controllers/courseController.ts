@@ -4,7 +4,7 @@ import Tutor from "../models/Tutor.js";
 import Course from "../models/Course.js";
 import CourseModule from "../models/CourseModule.js";
 import CourseLesson from "../models/CourseLesson.js";
-import ShortLink from "../models/ShortLink.js";
+import { createLinkInternal } from "./shortLinkController.js";
 import {
   DeleteFileFromCloudinary,
   UploadFileToCloudinary,
@@ -39,6 +39,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       // totalDuration,
       modules,
     } = req.body;
+    const tutorId = req.tutor?.tutorId;
 
     if (
       !bannerImage ||
@@ -120,7 +121,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       priceInNaira,
       priceInDollar,
       priceInPounds,
-      tutor: req.tutor?.tutorId,
+      tutor: tutorId,
       bannerImage: bannerUrl,
       thumbnail: thumbnailUrl,
       promoVideoUrl: promoVideoFinalUrl,
@@ -138,7 +139,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       totalModules++;
 
       const createdModule = await CourseModule.create({
-        courseId: newCourse._id,
+        course: newCourse._id,
         title: module.title,
         description: module.description,
       });
@@ -181,7 +182,7 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
         }
 
         await CourseLesson.create({
-          moduleId: createdModule._id,
+          module: createdModule._id,
           title: lesson.title,
           type: lesson.type,
           videoUrl,
@@ -193,11 +194,18 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    const response = await createLinkInternal(
+      String(newCourse?._id),
+      tutorId!,
+      "Tutor"
+    );
+
     // ✅ Update course with totals
     await Course.findByIdAndUpdate(newCourse._id, {
       numberOfModules: totalModules,
       numberOfLessons: totalLessons,
       totalDuration,
+      shortCode: response.shortCode,
     });
 
     // ✅ Increment tutor's course count
@@ -208,7 +216,14 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: "Course created successfully",
-      course: newCourse,
+      course: {
+        bannerImage: newCourse.bannerImage,
+        title: newCourse.title,
+        subTitle: newCourse.subTitle,
+        description: newCourse.description,
+        thumbnail: newCourse.thumbnail,
+        promoVideoUrl: newCourse.promoVideoUrl
+      },
     });
   } catch (error) {
     console.error("Error creating course", error);
@@ -353,7 +368,7 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
 
     // ===== Modules/Lessons diffing =====
     const safeModules = Array.isArray(modules) ? modules : [];
-    const existingModules = await CourseModule.find({ courseId: id });
+    const existingModules = await CourseModule.find({ course: id });
     const existingModuleIds = existingModules.map((m: any) => String(m._id));
     const incomingModuleIds = safeModules
       .map((m: any) => m?._id)
@@ -363,7 +378,7 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
     // Remove deleted modules (and their lessons + files)
     for (const module of existingModules) {
       if (!incomingModuleIds.includes(String(module._id))) {
-        const lessons = await CourseLesson.find({ moduleId: module._id });
+        const lessons = await CourseLesson.find({ module: module._id });
         for (const lesson of lessons) {
           if (lesson.videoUrl) {
             try {
@@ -397,20 +412,20 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
       let moduleId = mod._id;
 
       if (moduleId && existingModuleIds.includes(String(moduleId))) {
-        await CourseModule.findByIdAndUpdate(moduleId, {
+        await CourseModule.findByIdAndUpdate((module = moduleId), {
           title: mod.title,
           description: mod.description,
         });
       } else {
         const newModule = await CourseModule.create({
-          courseId: id,
+          course: id,
           title: mod.title,
           description: mod.description,
         });
         moduleId = newModule._id;
       }
 
-      const existingLessons = await CourseLesson.find({ moduleId });
+      const existingLessons = await CourseLesson.find({ module: moduleId });
       const existingLessonIds = existingLessons.map((l) => String(l._id));
       const incomingLessonIds = (mod.lessons || [])
         .map((l: any) => l?._id)
@@ -541,7 +556,7 @@ const updateCourse = async (req: Request, res: Response): Promise<any> => {
           }
 
           await CourseLesson.create({
-            moduleId,
+            module: moduleId,
             title: incoming.title,
             type: incoming.type,
             videoUrl,
@@ -707,14 +722,14 @@ const fetchSingleCourseUser = async (
     }
 
     // Get all modules for the course
-    const modules = await CourseModule.find({ courseId }).sort({
+    const modules = await CourseModule.find({ course: courseId }).sort({
       createdAt: 1,
     });
 
     // Attach lessons to each module
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
-        const lessons = await CourseLesson.find({ moduleId: module._id })
+        const lessons = await CourseLesson.find({ module: module._id })
           .select("-videoUrl -content -resources")
           .sort({ createdAt: 1 });
         return {
@@ -863,14 +878,14 @@ const fetchSingleCourseTutor = async (
     }
 
     // Get all modules for the course
-    const modules = await CourseModule.find({ courseId }).sort({
+    const modules = await CourseModule.find({ course: courseId }).sort({
       createdAt: 1,
     });
 
     // Attach lessons to each module
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
-        const lessons = await CourseLesson.find({ moduleId: module._id })
+        const lessons = await CourseLesson.find({ module: module._id })
           .select("-videoUrl -content -resources")
           .sort({ createdAt: 1 });
         return {
@@ -940,13 +955,14 @@ const fetchAllCoursesAffiliate = async (
       {
         $lookup: {
           from: "shortlinks", // collection name in MongoDB
-          let: { courseId: "$_id" },
+          let: { course: "$_id" },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$course", "$$courseId"] },
+                    // { $eq: ["$course", "$$courseId"] },
+                    { $eq: ["$course", "$$course"] },
                     {
                       $eq: [
                         "$affiliate",
@@ -1044,13 +1060,14 @@ const fetchSingleCourseAffiliate = async (
       {
         $lookup: {
           from: "shortlinks",
-          let: { courseId: "$_id" },
+          let: { course: "$_id" },
           pipeline: [
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$course", "$$courseId"] },
+                    // { $eq: ["$course", "$$courseId"] },
+                    { $eq: ["$course", "$$course"] },
                     {
                       $eq: [
                         "$affiliate",
@@ -1099,13 +1116,13 @@ const fetchSingleCourseAffiliate = async (
     const course = courseData[0];
 
     // ✅ Fetch modules & lessons separately (still needed)
-    const modules = await CourseModule.find({ courseId }).sort({
+    const modules = await CourseModule.find({ course: courseId }).sort({
       createdAt: 1,
     });
 
     const modulesWithLessons = await Promise.all(
       modules.map(async (module) => {
-        const lessons = await CourseLesson.find({ moduleId: module._id })
+        const lessons = await CourseLesson.find({ module: module._id })
           .select("-videoUrl -content -resources")
           .sort({ createdAt: 1 });
 

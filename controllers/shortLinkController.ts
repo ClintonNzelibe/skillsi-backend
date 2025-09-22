@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import { nanoid } from "nanoid";
-import Affiliate from "../models/Affiliate.js";
+import Tutor from "../models/Tutor.js";
+import Affiliate, { IAffiliate } from "../models/Affiliate.js";
 import Course from "../models/Course.js";
 import ShortLink from "../models/ShortLink.js";
+import { Document } from "mongoose";
 
 // Helper function to get a truly unique shortCode
 async function generateUniqueShortCode() {
@@ -19,29 +21,86 @@ async function generateUniqueShortCode() {
   return code;
 }
 
+export async function createLinkInternal(
+  courseId: string,
+  customerId: string,
+  customerModel: string = "Tutor"
+) {
+  try {
+    if (!courseId || !customerId || !customerModel) {
+      throw new Error("All fields required");
+    }
+
+    const link = await ShortLink.findOne({
+      course: courseId,
+      customer: customerId,
+      customerModel,
+    });
+
+    if (link) {
+      throw new Error("You already created a link for this course");
+    }
+
+    const shortCode = await generateUniqueShortCode();
+
+    const finalLink = await ShortLink.create({
+      course: courseId,
+      customer: customerId,
+      customerModel,
+      shortCode,
+    });
+
+    return { shortCode: finalLink.shortCode };
+  } catch (error: any) {
+    console.error("Error creating internal link:", error);
+    throw new Error(error?.message || "Internal Server Error");
+  }
+}
+
 const createShortLink = async (req: Request, res: Response): Promise<any> => {
   try {
     const { courseId } = req.params;
-    const affiliateId = req.affiliate?.affiliateId;
+    const { customerModel } = req.query;
+    if (!courseId || !customerModel) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "All fields required",
+      });
+    }
 
-    const affiliate = await Affiliate.findById(affiliateId);
+    let customerId;
+    if (customerModel === "Tutor") {
+      customerId = req.tutor?.tutorId;
+    } else if (customerModel === "Affiliate") {
+      customerId = req.affiliate?.affiliateId;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Customer Model",
+      });
+    }
+    const customer =
+      customerModel === "Tutor"
+        ? await Tutor.findById(customerId)
+        : await Affiliate.findById(customerId);
 
-    if (!affiliate) {
+    if (!customer) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: "Affiliate doesn't exist",
       });
     }
 
-    if (!courseId || !affiliateId) {
+    if (!customerId) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "Missing courseId or affiliateId" });
+        .json({ success: false, message: "Missing customer id" });
     }
 
     const link = await ShortLink.findOne({
       course: courseId,
-      affiliate: affiliateId,
+      customer: customerId,
+      customerModel,
     });
 
     if (link) {
@@ -55,12 +114,16 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
 
     await ShortLink.create({
       course: courseId,
-      affiliate: affiliateId,
+      customer: customerId,
       shortCode,
     });
 
-    affiliate.totalCoursesPromoted = (affiliate.totalCoursesPromoted || 0) + 1;
-    await affiliate.save();
+    if (customerModel === "Affiliate") {
+      const affiliate = customer as IAffiliate & Document;
+      affiliate.totalCoursesPromoted =
+        (affiliate.totalCoursesPromoted || 0) + 1;
+      await affiliate.save();
+    }
 
     res.status(StatusCodes.CREATED).json({
       success: true,
@@ -91,9 +154,13 @@ const getShortLink = async (req: Request, res: Response): Promise<any> => {
     res.json({
       success: true,
       message: "Short Link gotten successfully",
-      courseId: shortLink.course,
-      affiliateId: shortLink.affiliate,
-      shortCode: shortLink.shortCode,
+      data: {
+        _id: shortLink._id,
+        courseId: shortLink.course,
+        customerId: shortLink.customer,
+        customerModel: shortLink.customerModel,
+        shortCode: shortLink.shortCode,
+      },
     });
   } catch (error) {
     console.error("Error fetching short link:", error);

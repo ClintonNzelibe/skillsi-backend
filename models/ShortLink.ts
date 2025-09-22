@@ -2,7 +2,8 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IShortLink extends Document {
   course: Types.ObjectId;
-  affiliate: Types.ObjectId;
+  customer: Types.ObjectId;
+  customerModel: "Tutor" | "Affiliate";
   shortCode: string;
   totalEarnings?: number;
   totalEnrollments?: number;
@@ -20,10 +21,15 @@ const ShortLinkSchema: Schema<IShortLink> = new Schema(
       ref: "Course",
       required: [true, "Please provide course id"],
     },
-    affiliate: {
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Affiliate",
-      required: [true, "Please provide affiliate id"],
+      refPath: "customerModel",
+      required: [true, "Please provide the customer id"],
+    },
+    customerModel: {
+      type: String,
+      required: [true, "Please provide customer model"],
+      enum: ["Tutor", "Affiliate"], // models it can point to
     },
     shortCode: {
       type: String,

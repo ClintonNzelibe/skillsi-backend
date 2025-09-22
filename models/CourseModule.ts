@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 // Course Module Interface
 interface ICourseModule extends Document {
-  courseId: Types.ObjectId; // reference to Course
+  course: Types.ObjectId; // reference to Course
   title: string;
   description: string;
 }
@@ -10,8 +10,9 @@ interface ICourseModule extends Document {
 // Course Module Schema
 const CourseModuleSchema: Schema<ICourseModule> = new Schema(
   {
-    courseId: {
+    course: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
       required: [true, "Please provide course id"],
       trim: true,
     },
