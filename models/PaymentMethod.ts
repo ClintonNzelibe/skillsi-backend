@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface IPaymentMethod extends Document {
   customer: Types.ObjectId;
-  customerModel: "User" | "Admin" | "Affiliate";
+  customerModel: "User" | "Tutor" | "Affiliate";
   authorizationCode: string;
   bin: string;
   lastFour: string;
@@ -24,7 +24,7 @@ const PaymentMethodSchema: Schema<IPaymentMethod> = new Schema<IPaymentMethod>(
     customerModel: {
       type: String,
       required: [true, "Please provider customer model"],
-      enum: ["User", "Admin", "Affiliate"], // models it can point to
+      enum: ["User", "Tutor", "Affiliate"], // models it can point to
     },
     authorizationCode: {
       type: String,

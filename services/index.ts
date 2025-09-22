@@ -9,8 +9,9 @@ import {
   PaystackVerify,
   PaystackTokenizeBank,
   getAccountName,
+  payWithExistingBankMethod,
   initiateWithdrawal,
-  finalizeTransfer
+  finalizeTransfer,
 } from "./Paystack.js";
 
 export {
@@ -22,6 +23,7 @@ export {
   PaystackVerify,
   PaystackTokenizeBank,
   getAccountName,
+  payWithExistingBankMethod,
   initiateWithdrawal,
-  finalizeTransfer
+  finalizeTransfer,
 };

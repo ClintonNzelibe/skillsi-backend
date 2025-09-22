@@ -16,12 +16,12 @@ import {
 router.route("/webhook").post(paystackWebhook);
 
 router
-  .route("/addPaymentMethod")
+  .route("/handlePaymentMethod")
   .post(authenticateUser, addPaymentMethod)
   .get(authenticateUser, getAllPaymentMethods);
 
 router
-  .route("/:id")
+  .route("/:methodId")
   .delete(authenticateUser, deletePaymentMethod)
   .patch(authenticateUser, setDefaultPaymentMethod);
 

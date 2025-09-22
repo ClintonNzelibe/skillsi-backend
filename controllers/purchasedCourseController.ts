@@ -13,7 +13,7 @@ const fetchPaidCoursesUser = async (
 
     // Fetch paid courses for the user
     const paidCourses = await PurchasedCourse.find({
-      purchasedBy: userId,
+      customer: userId,
     })
       .select("course overallCompletionPercent")
       .populate({
@@ -63,7 +63,7 @@ const fetchSinglePaidCourseUser = async (
     }
 
     const paidCourse = await PurchasedCourse.findOne({
-      purchased: userId,
+      customer: userId,
       course: courseId,
     }).populate({
       path: "course",

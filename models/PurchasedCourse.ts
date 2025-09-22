@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 interface IPurchasedCourse extends Document {
-  user: Types.ObjectId; // Reference to User
+  customer: Types.ObjectId; // Reference to User
   course: Types.ObjectId; // Reference to Course
   purchasedAt: Date;
   isCompleted: boolean;
@@ -14,7 +14,7 @@ interface IPurchasedCourse extends Document {
 
 const PurchasedCourseSchema: Schema<IPurchasedCourse> = new Schema(
   {
-    user: {
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Please provider user id"],

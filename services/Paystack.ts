@@ -21,7 +21,8 @@ export const InitializePayment = async (
   customerModel: "User" | "Admin" | "Affiliate" | string,
   callbackPath: string,
   extraMetadata: Record<string, any> = {},
-  callbackUrl: string
+  callbackUrl: string,
+  courseId?: string,
 ): Promise<{ authorization_url: string; reference: string }> => {
   if (!email || !amount || !purpose) {
     throw new Error("Email, amount, and purpose are required");
@@ -88,11 +89,24 @@ export const PaystackRefund = async (reference: string, customerId: string) => {
 };
 
 export const PaystackVerify = async (reference: string) => {
-  const response = await paystack.get(
-    `https://api.paystack.co/transaction/verify/${reference}`
-  );
+  try {
+    const response = await paystack.get(
+      `https://api.paystack.co/transaction/verify/${reference}`
+    );
 
-  return response.data.data;
+    return response.data.data;
+  } catch (error: any) {
+    console.error(
+      "Paystack verify failed:",
+      error.response?.data || error.message
+    );
+    throw new Error(
+      error.response?.data ||
+        error.message ||
+        error?.response?.data?.message ||
+        "Error tokenizing bank account"
+    );
+  }
 };
 
 /**
@@ -156,6 +170,34 @@ export const getAccountName = async (
     throw new Error(
       error?.response?.data?.message || "Error getting account name"
     );
+  }
+};
+
+export const payWithExistingBankMethod = async (
+  authorizationCode: string,
+  email: string,
+  coursePriceInKobo: number,
+  courseId: string,
+  userId: string,
+  purpose: string
+) => {
+  try {
+    // Call Paystack to charge authorization
+    const response = await paystack.post("/transaction/charge_authorization", {
+      authorization_code: authorizationCode,
+      email, // must be provided
+      amount: coursePriceInKobo,
+      currency: "NGN",
+      metadata: {
+        courseId,
+        userId,
+        purpose,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || error.message);
   }
 };
 

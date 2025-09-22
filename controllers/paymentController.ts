@@ -10,6 +10,7 @@ import {
   InitializePayment,
   PaystackRefund,
   PaystackVerify,
+  payWithExistingBankMethod,
 } from "../services/index.js";
 
 const displayCard = (last4: string, bin: string) => {
@@ -43,7 +44,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Missing payload" });
     }
-    if (typeof payload === "string" || !Buffer.isBuffer(payload)) {
+    if (typeof payload === "string" || Buffer.isBuffer(payload) === false) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Payload must be a Buffer" });
@@ -62,54 +63,54 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     }
 
     // Parse JSON payload after verifying signature
-    const event = JSON.parse(payload.toString());
+    // const event = JSON.parse(payload.toString());
     // console.log("Received Paystack event:", event);
     // console.log("Event type:", event.event);
     // console.log("Event data:", event.data);
     // console.log("Event metadata:", event.data.metadata);
     // console.log("Event reference:", event.data.reference);
+    let event: any;
+    try {
+      event = JSON.parse(payload.toString());
+    } catch (err) {
+      console.error("Webhook JSON parse failed:", err);
+      return res.sendStatus(400);
+    }
+
     // Handle the event based on its type
-    if (event.event === "charge.success") {
-      const metadata = event.data.metadata;
-      const purpose = metadata?.purpose;
+    // ===== Trust webhook first =====
+    const data = event.data;
+    const metadata = data?.metadata || {};
+    const status = data?.status; // success, failed, abandoned
+    const reference = data?.reference;
 
-      if (purpose === "card_tokenization") {
+    // ===== Safe verify (fallback) =====
+    const verifyData = await PaystackVerify(event.data.reference);
+    const verifiedStatus = verifyData?.status || status;
+
+    if (event.event === "charge.success" && verifiedStatus === "success") {
+      if (metadata?.purpose === "card_tokenization") {
         const customerId = metadata.id;
-        const priceInKobo = 100 * 100; // ₦100 in kobo
-        const reference = event.data.reference;
-
-        const existingPaymentMethods = await PaymentMethod.find({
-          user: customerId,
-        });
-        const isFirstPaymentMethod = existingPaymentMethods.length === 0;
-
-        // Tokenize card
-        const {
-          transactionId,
-          authorizationCode,
-          bin,
-          lastFour,
-          expMonth,
-          expYear,
-          bank,
-          cardType,
-          cardHolderName,
-          customerModel,
-        } = await verifyAndTokenizeCard(reference, priceInKobo, customerId);
-
-        await PaymentMethod.create({
+        const existingMethods = await PaymentMethod.find({
           customer: customerId,
-          customerModel,
-          authorizationCode,
-          bin,
-          lastFour,
-          expMonth,
-          expYear,
-          bank,
-          cardType,
-          cardHolderName,
-          isDefault: isFirstPaymentMethod,
         });
+        const isFirst = existingMethods.length === 0;
+
+        if (data.authorization.reusable) {
+          await PaymentMethod.create({
+            customer: customerId,
+            customerModel: metadata.customerModel,
+            authorizationCode: data.authorization.authorization_code,
+            bin: data.authorization.bin,
+            lastFour: data.authorization.last4,
+            expMonth: data.authorization.exp_month,
+            expYear: data.authorization.exp_year,
+            bank: data.authorization.bank,
+            cardType: data.authorization.card_type,
+            cardHolderName: data.authorization.account_name,
+            isDefault: isFirst,
+          });
+        }
 
         // console.log(`Card tokenized for user ${customerId}`);
 
@@ -123,87 +124,52 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
             refundError.response?.data || refundError
           );
         }
+      } else if (metadata?.purpose === "course_payment") {
+        await PurchasedCourse.create({
+          customer: metadata.id,
+          course: metadata?.courseId,
+          purchasedAt: data.paid_at,
+          isCompleted: true,
+          paymentReference: reference,
+          transactionId: data.id,
+          authorizationCode: data.authorization.authorization_code,
+          amountPaid: data.amount / 100,
+        });
       }
 
       // You can handle other purposes here, e.g., course_purchase, wallet_topup, etc.
     }
+
+    // Handle failure
+    if (status === "failed" || verifiedStatus === "failed") {
+      console.warn("Payment failed:", reference);
+    }
+
+    // Always log the attempt
+    await PaymentHistory.create({
+      customer: metadata.id,
+      customerModel: metadata.customerModel || "User",
+      course: metadata?.courseId || null,
+      reference,
+      amount: data.amount / 100,
+      currency: data.currency,
+      type: "debit",
+      transactionId: data.id,
+      transactionType: metadata.transactionType || "course_payment",
+      status: verifiedStatus,
+      bank: data.authorization.bank,
+      cardType: data.authorization.card_type,
+      channel: data.authorization.channel,
+      gatewayResponse: data.gateway_response,
+      paidAt: data.paid_at,
+      ipAddress: data.ip_address,
+    });
 
     res.sendStatus(200);
   } catch (error) {
     console.error("Webhook error:", error);
     res.sendStatus(500);
   }
-};
-
-const verifyAndTokenizeCard = async (
-  reference: string,
-  expectedAmount: number,
-  customerId: string,
-  courseId?: string
-) => {
-  const data = await PaystackVerify(reference);
-
-  const paymentStatus = data.status;
-  const paymentData = data.authorization;
-
-  // console.log("Complete data:", data, "Payment status:", paymentStatus);
-
-  // Always log the attempt
-  await PaymentHistory.create({
-    customer: customerId,
-    customerModel: data.metadata.customerModel || "User",
-    course: courseId,
-    reference,
-    amount: data.amount,
-    currency: paymentData.currency,
-    type: "debit",
-    transactionId: data.id,
-    transactionType: data.metadata.transactionType || "course_payment",
-    status: paymentStatus,
-    bank: paymentData.bank,
-    cardType: paymentData.card_type,
-    gatewayResponse: data.gateway_response,
-    channel: paymentData.channel,
-    paidAt: paymentData.paid_at,
-    ipAddress: data.ip_address,
-  });
-
-  // ✅ Check if the transaction was successful
-  if (data.status !== "success") {
-    throw new Error("Transaction was not successful");
-  }
-
-  // ✅ Validate amount
-  if (data.amount !== expectedAmount) {
-    throw new Error("Incorrect payment amount");
-  }
-
-  const { authorization, id: transactionId, metadata } = data;
-
-  // if (!authorization?.reusable) {
-  //   throw new Error("Card not reusable");
-  // }
-
-  // console.log(authorization, transactionId);
-
-  if (authorization.reusable) {
-    // Save reusable card authorization_code
-    return {
-      transactionId, // include this
-      authorizationCode: authorization.authorization_code,
-      bin: authorization.bin,
-      lastFour: authorization.last4,
-      expMonth: authorization.exp_month,
-      expYear: authorization.exp_year,
-      bank: authorization.bank,
-      cardType: authorization.card_type,
-      cardHolderName: authorization.account_name || "Unknown",
-      customerModel: metadata.customerModel || "User",
-      transactionType: metadata.transactionType || "card_tokenization",
-    };
-  }
-
-  throw new Error("Card not reusable");
 };
 
 const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
@@ -223,7 +189,7 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
       amount,
       "card_tokenization",
       "User",
-      "/payment/callback",
+      "/payment/success",
       {},
       callback_url
     );
@@ -248,12 +214,12 @@ const setDefaultPaymentMethod = async (
 ): Promise<any> => {
   try {
     const userId = req.user?.userId;
-    const methodId = req.params.id;
+    const { methodId } = req.params;
 
-    await PaymentMethod.updateMany({ user: userId }, { isDefault: false });
+    await PaymentMethod.updateMany({ customer: userId }, { isDefault: false });
 
     const updated = await PaymentMethod.findOneAndUpdate(
-      { _id: methodId, user: userId },
+      { _id: methodId, customer: userId },
       { isDefault: true },
       { new: true }
     );
@@ -282,12 +248,12 @@ const deletePaymentMethod = async (
   res: Response
 ): Promise<any> => {
   try {
-    const methodId = req.params.id;
+    const { methodId } = req.params;
     const userId = req.user?.userId;
 
     const deleted = await PaymentMethod.findOneAndDelete({
       _id: methodId,
-      user: userId,
+      customer: userId,
     });
 
     if (!deleted) {
@@ -315,7 +281,7 @@ const getAllPaymentMethods = async (
     const userId = req.user?.userId;
 
     // Fetch all methods, default first, then by createdAt descending
-    const methods = await PaymentMethod.find({ user: userId }).sort({
+    const methods = await PaymentMethod.find({ customer: userId }).sort({
       isDefault: -1,
       createdAt: -1,
     });
@@ -323,7 +289,15 @@ const getAllPaymentMethods = async (
     // Map through and format card numbers
     const formattedMethods = methods.map((method) => {
       return {
-        ...method.toObject(),
+        // ...method.toObject(),
+        _id: method._id,
+        // customer: method.customer,
+        expMonth: method.expMonth,
+        expYear: method.expYear,
+        bank: method.bank,
+        cardType: method.cardType,
+        isDefault: method.isDefault,
+        // cardHolderName: method.cardHolderName,
         formattedCardNumber: displayCard(method.lastFour, method.bin),
       };
     });
@@ -343,13 +317,14 @@ const getAllPaymentMethods = async (
 
 const coursePayment = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { reference, courseId } = req.body;
+    const { courseId, paymentMethodId } = req.body;
     const userId = req.user?.userId;
+    const email = req.user?.email;
 
-    if (!reference || !courseId) {
+    if (!courseId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Missing payment reference or course ID.",
+        message: "Missing or course ID.",
       });
     }
 
@@ -365,30 +340,75 @@ const coursePayment = async (req: Request, res: Response): Promise<any> => {
     // const coursePriceInKobo = course.priceInNaira * 100;
     const coursePriceInKobo = Number(course.priceInNaira) * 100;
 
-    // Reuse the verify and tokenize logic
-    const paymentDetails = await verifyAndTokenizeCard(
-      reference,
-      coursePriceInKobo,
-      courseId,
-      userId
-    );
+    if (paymentMethodId) {
+      // === Pay with saved card ===
+      const paymentMethod = await PaymentMethod.findById(paymentMethodId);
+      if (!paymentMethod) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          success: false,
+          message: "Saved payment method not found.",
+        });
+      }
 
-    // Save or update user-course enrollment/payment record here
-    await PurchasedCourse.create({
-      user: userId,
-      course: courseId,
-      purchasedAt: new Date(),
-      isCompleted: true,
-      paymentReference: reference,
-      transactionId: paymentDetails.transactionId,
-      authorizationCode: paymentDetails.authorizationCode,
-      amountPaid: course.priceInNaira,
-    });
+      const response = await payWithExistingBankMethod(
+        paymentMethod.authorizationCode,
+        email!,
+        coursePriceInKobo,
+        courseId,
+        userId!,
+        "course_payment"
+      );
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Course payment successful",
-    });
+      console.log("Course payment:", response);
+
+      if (!response.status) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: response.message || "Payment failed.",
+        });
+      }
+
+      const courseData = {
+        transaction_id: response.data.id,
+        reference: response.data.reference,
+      };
+
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Course payment successful",
+        data: courseData,
+      });
+    } else {
+      const callback_url =
+        req.headers?.origin || "https://skillsi-tutor.vercel.app";
+
+      // Always charge ₦100 for tokenization
+      const amount = Number(course.priceInNaira);
+
+      // Initialize payment for tokenization
+      const { authorization_url, reference } = await InitializePayment(
+        userId!,
+        email!,
+        amount,
+        "course_payment",
+        "User",
+        "/payment/success",
+        {},
+        callback_url,
+        courseId
+      );
+
+      const courseData = {
+        authorization_url,
+        reference,
+      };
+
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: "Course payment initialized",
+        data: courseData,
+      });
+    }
   } catch (error) {
     console.error("Error making payment for the course:", error);
     res
