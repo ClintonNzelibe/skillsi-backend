@@ -22,7 +22,7 @@ export const InitializePayment = async (
   callbackPath: string,
   extraMetadata: Record<string, any> = {},
   callbackUrl: string,
-  courseId?: string,
+  courseId?: string
 ): Promise<{ authorization_url: string; reference: string }> => {
   if (!email || !amount || !purpose) {
     throw new Error("Email, amount, and purpose are required");
@@ -46,6 +46,7 @@ export const InitializePayment = async (
     ...(channels && { channels }),
     metadata: {
       id,
+      courseId,
       purpose,
       customerModel,
       transactionType: purpose,
