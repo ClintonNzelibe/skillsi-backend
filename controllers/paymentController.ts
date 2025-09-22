@@ -83,10 +83,30 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     const metadata = data?.metadata || {};
     const status = data?.status; // success, failed, abandoned
     const reference = data?.reference;
-
+    
     // ===== Safe verify (fallback) =====
     const verifyData = await PaystackVerify(event.data.reference);
     const verifiedStatus = verifyData?.status || status;
+
+    // Always log the attempt
+    await PaymentHistory.create({
+      customer: metadata.id,
+      customerModel: metadata.customerModel || "User",
+      course: metadata?.courseId || null,
+      reference,
+      amount: data.amount / 100,
+      currency: data.currency,
+      type: "debit",
+      transactionId: data.id,
+      transactionType: metadata.transactionType || "course_payment",
+      status: verifiedStatus,
+      bank: data.authorization.bank,
+      cardType: data.authorization.card_type,
+      channel: data.authorization.channel,
+      gatewayResponse: data.gateway_response,
+      paidAt: data.paid_at,
+      ipAddress: data.ip_address,
+    });
 
     if (event.event === "charge.success" && verifiedStatus === "success") {
       if (metadata?.purpose === "card_tokenization") {
@@ -144,26 +164,6 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     if (status === "failed" || verifiedStatus === "failed") {
       console.warn("Payment failed:", reference);
     }
-
-    // Always log the attempt
-    await PaymentHistory.create({
-      customer: metadata.id,
-      customerModel: metadata.customerModel || "User",
-      course: metadata?.courseId || null,
-      reference,
-      amount: data.amount / 100,
-      currency: data.currency,
-      type: "debit",
-      transactionId: data.id,
-      transactionType: metadata.transactionType || "course_payment",
-      status: verifiedStatus,
-      bank: data.authorization.bank,
-      cardType: data.authorization.card_type,
-      channel: data.authorization.channel,
-      gatewayResponse: data.gateway_response,
-      paidAt: data.paid_at,
-      ipAddress: data.ip_address,
-    });
 
     res.sendStatus(200);
   } catch (error) {
