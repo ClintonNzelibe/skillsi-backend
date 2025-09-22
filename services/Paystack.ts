@@ -190,9 +190,11 @@ export const payWithExistingBankMethod = async (
       amount: coursePriceInKobo,
       currency: "NGN",
       metadata: {
+        id: userId,
         courseId,
-        userId,
         purpose,
+        customerModel: "User",
+        transactionType: purpose,
       },
     });
 

@@ -80,10 +80,10 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     // Handle the event based on its type
     // ===== Trust webhook first =====
     const data = event.data;
-    const metadata = data?.metadata || {};
+    const metadata = data?.metadata;
     const status = data?.status; // success, failed, abandoned
     const reference = data?.reference;
-    
+
     // ===== Safe verify (fallback) =====
     const verifyData = await PaystackVerify(event.data.reference);
     const verifiedStatus = verifyData?.status || status;
@@ -109,7 +109,7 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     });
 
     if (event.event === "charge.success" && verifiedStatus === "success") {
-      if (metadata?.purpose === "card_tokenization") {
+      if (metadata.purpose === "card_tokenization") {
         const customerId = metadata.id;
         const existingMethods = await PaymentMethod.find({
           customer: customerId,
@@ -144,10 +144,10 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
             refundError.response?.data || refundError
           );
         }
-      } else if (metadata?.purpose === "course_payment") {
+      } else if (metadata.purpose === "course_payment") {
         await PurchasedCourse.create({
           customer: metadata.id,
-          course: metadata?.courseId,
+          course: metadata.courseId,
           purchasedAt: data.paid_at,
           isCompleted: true,
           paymentReference: reference,
