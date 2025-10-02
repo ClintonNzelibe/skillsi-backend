@@ -293,6 +293,7 @@ const withdrawalFromBalance = async (
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Bank not found" });
     }
+    const accountNumber = bankPaymentMethod.decryptAccountNumber();
 
     // Check balance first
     const customer =
@@ -335,7 +336,7 @@ const withdrawalFromBalance = async (
       verificationToken,
       amount,
       fName,
-      accountNumber: bankPaymentMethod.decryptAccountNumber(),
+      accountNumber,
       bankName: bankPaymentMethod.bankName,
     });
 

@@ -1,4 +1,3 @@
-import { NumberSchemaDefinition } from "mongoose";
 import sendEmail from "./sendEmail.js";
 
 interface SendPaymentVerificationEmailParams {
