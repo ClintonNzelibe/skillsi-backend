@@ -331,12 +331,19 @@ const withdrawalFromBalance = async (
         ? (customer as ITutor).fName
         : (customer as IAffiliate).firstName;
 
+    const stringedAmount = amount.toLocaleString("en-NG", {
+      style: "currency",
+      currency: "NGN",
+    });
+    // Mask account number (only last 4 digits visible)
+    const maskedAccount = accountNumber.replace(/\d(?=\d{4})/g, "*");
+
     await sendPaymentVerificationEmail({
       email: customer.email,
       verificationToken,
-      amount,
+      amount: stringedAmount,
       fName,
-      accountNumber,
+      accountNumber: maskedAccount,
       bankName: bankPaymentMethod.bankName,
     });
 
@@ -424,6 +431,7 @@ const resendWithdrawalOtp = async (
         .status(StatusCodes.NOT_FOUND)
         .json({ success: false, message: "Bank not found" });
     }
+    const accountNumber = bankPaymentMethod.decryptAccountNumber();
 
     const customerId =
       pending.customerModel === "Tutor"
@@ -459,13 +467,20 @@ const resendWithdrawalOtp = async (
     pending.verificationResendAttempts += 1;
     await pending.save();
 
+    const stringedAmount = pending?.amount.toLocaleString("en-NG", {
+      style: "currency",
+      currency: "NGN",
+    });
+    // Mask account number (only last 4 digits visible)
+    const maskedAccount = accountNumber.replace(/\d(?=\d{4})/g, "*");
+
     // send OTP again (email, sms etc.)
     await sendPaymentVerificationEmail({
       email: customer?.email,
       verificationToken,
-      amount: pending.amount,
+      amount: stringedAmount,
       fName,
-      accountNumber: bankPaymentMethod.decryptAccountNumber(),
+      accountNumber: maskedAccount,
       bankName: bankPaymentMethod.bankName,
     });
 

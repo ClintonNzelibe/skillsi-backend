@@ -3,7 +3,7 @@ import sendEmail from "./sendEmail.js";
 interface SendPaymentVerificationEmailParams {
   email: string;
   verificationToken: string;
-  amount: number;
+  amount: string;
   fName: string;
   accountNumber: string;
   bankName: string;
@@ -17,13 +17,6 @@ const sendPaymentVerificationEmail = async ({
   accountNumber,
   bankName,
 }: SendPaymentVerificationEmailParams) => {
-  const stringedAmount = amount.toLocaleString("en-NG", {
-    style: "currency",
-    currency: "NGN",
-  });
-
-  // Mask account number (only last 4 digits visible)
-  const maskedAccount = accountNumber.replace(/\d(?=\d{4})/g, "*");
 
   const message = `<div style="background-color: #e2e2ff; padding: 3rem 1.5rem; display: flex; flex-direction: column; align-items: center;">
                         <div style="clear: both; width: 90%; background-color: #ffffff; margin: auto; padding: 2rem; border-radius: 2rem; display: block;">
@@ -32,7 +25,7 @@ const sendPaymentVerificationEmail = async ({
 
                           <h6 style="font-size: 1.2rem;">Hello, ${fName}</h6>
 
-                          <p class="message-font">This email confirms that we have received your request to withdraw ${stringedAmount} from your account on ${new Date().toLocaleString()}.
+                          <p class="message-font">This email confirms that we have received your request to withdraw ${amount} from your account on ${new Date().toLocaleString()}.
                           </p> 
 
                           <p>The withdrawal is currently being processed and is expected to be completed within 7 business days. Once the funds have been sent, you will receive another notification confirming the transfer.</p>
@@ -44,9 +37,9 @@ const sendPaymentVerificationEmail = async ({
                           <div>
                             <h3>Withdrawal details:</h3>
                             <ul>
-                              <li><b>Amount:</b> ${stringedAmount}</li>
+                              <li><b>Amount:</b> ${amount}</li>
                               <li><b>Request Date:</b> ${new Date().toLocaleString()}</li>
-                              <li><b>To:</b> ${bankName} - ${maskedAccount}</li>
+                              <li><b>To:</b> ${bankName} - ${accountNumber}</li>
                             </ul>
                           </div>
 
@@ -70,7 +63,7 @@ const sendPaymentVerificationEmail = async ({
 
   return sendEmail({
     to: email,
-    subject: `Confirmation of your withdrawal request for ${stringedAmount}`,
+    subject: `Confirmation of your withdrawal request for ${amount}`,
     html: `${message}`,
   });
 };
