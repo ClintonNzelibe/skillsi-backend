@@ -10,7 +10,9 @@ const paystack = axios.create({
   headers: {
     Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
     "Content-Type": "application/json",
+    "User-Agent": "skillsi",
   },
+  timeout: 10000,
 });
 
 export const InitializePayment = async (

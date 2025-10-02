@@ -7,6 +7,7 @@ import {
   accountName,
   addBankAccount,
   getAllBankPaymentMethods,
+  deletePaymentMethod,
   withdrawalFromBalance,
   confirmWithdrawal,
   resendWithdrawalOtp,
@@ -19,6 +20,8 @@ router.route("/addBankAccount").post(authenticateGeneral, addBankAccount);
 router
   .route("/getAllBankPaymentMethods")
   .get(authenticateGeneral, getAllBankPaymentMethods);
+
+router.route("/:methodId").delete(authenticateGeneral, deletePaymentMethod);
 
 router
   .route("/withdrawalFromBalance")

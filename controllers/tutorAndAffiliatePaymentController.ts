@@ -200,6 +200,55 @@ const getAllBankPaymentMethods = async (
   }
 };
 
+const deletePaymentMethod = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { customerModel } = req.body;
+    const { methodId } = req.params;
+
+    let customerId;
+    if (customerModel === "Tutor") {
+      customerId = req.tutor?.tutorId;
+    } else if (customerModel === "Affiliate") {
+      customerId = req.affiliate?.affiliateId;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Customer Model",
+      });
+    }
+
+    if (!customerId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: `${customerModel} Id can't be empty`,
+      });
+    }
+    const deleted = await BankPaymentMethod.findOneAndDelete({
+      _id: methodId,
+      customer: customerId,
+      customerModel,
+    });
+
+    if (!deleted) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Payment Method not found" });
+    }
+
+    res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting payment method:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 const withdrawalFromBalance = async (
   req: Request,
   res: Response
@@ -463,6 +512,7 @@ export {
   accountName,
   addBankAccount,
   getAllBankPaymentMethods,
+  deletePaymentMethod,
   withdrawalFromBalance,
   confirmWithdrawal,
   resendWithdrawalOtp,
