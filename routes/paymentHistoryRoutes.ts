@@ -5,14 +5,14 @@ import { authenticateGeneral } from "../middleware/authentication.js";
 
 import {
   getAllPaymentHistory,
-  // getSinglePaymentHistoryUser,
+  getSinglePaymentHistory,
 } from "../controllers/paymentHistoryController.js";
 
 router.route("/").get(authenticateGeneral, getAllPaymentHistory);
 
-// router
-//   .route("/paymentHistoryUser")
-//   .post(authenticateUser, get FAllPaymentHistoryUser);
+router
+  .route("/:paymentHistoryId")
+  .get(authenticateGeneral, getSinglePaymentHistory);
 
 // router
 //   .route("/paymentHistoryUser/:id")

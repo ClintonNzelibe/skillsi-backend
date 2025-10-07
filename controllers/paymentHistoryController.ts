@@ -104,10 +104,10 @@ const getSinglePaymentHistory = async (
       });
     }
 
-    const { id } = req.params;
+    const { paymentHistoryId } = req.params;
 
     const payment = await PaymentHistory.findOne({
-      _id: id,
+      _id: paymentHistoryId,
       customer: customerId,
       customerModel,
     }).populate("course");
