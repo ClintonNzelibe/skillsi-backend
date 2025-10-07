@@ -1,14 +1,14 @@
 import { Router } from "express";
 const router = Router();
 
-import { authenticateUser } from "../middleware/authentication.js";
+import { authenticateGeneral } from "../middleware/authentication.js";
 
 import {
-  getAllPaymentHistoryUser,
-  getSinglePaymentHistoryUser,
+  getAllPaymentHistory,
+  // getSinglePaymentHistoryUser,
 } from "../controllers/paymentHistoryController.js";
 
-router.route("/user").post(authenticateUser, getAllPaymentHistoryUser);
+router.route("/").get(authenticateGeneral, getAllPaymentHistory);
 
 // router
 //   .route("/paymentHistoryUser")

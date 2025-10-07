@@ -3,18 +3,40 @@ import { StatusCodes } from "http-status-codes";
 
 import PaymentHistory from "../models/PaymentHistory.js";
 
-const getAllPaymentHistoryUser = async (
+const getAllPaymentHistory = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   try {
-    const userId = req.user?.userId;
+    const { customerModel } = req.query;
+
+    let customerId;
+    if (customerModel === "Tutor") {
+      customerId = req.tutor?.tutorId;
+    } else if (customerModel === "Affiliate") {
+      customerId = req.affiliate?.affiliateId;
+    } else if (customerModel === "User") {
+      customerId = req.user?.userId;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Customer Model",
+      });
+    }
+
+    if (!customerId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: `${customerModel} Id can't be empty`,
+      });
+    }
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
     const { status } = req.query;
 
-    let filter: any = { $and: [{ user: userId }] };
+    let filter: any = { $and: [{ customer: customerId }] };
 
     if (status) {
       filter.$and.push({ status });
@@ -26,7 +48,9 @@ const getAllPaymentHistoryUser = async (
 
     const [payments, total] = await Promise.all([
       PaymentHistory.find(filter)
-        .select("user course reference transactionId amount status")
+        .select(
+          "customer customerModel course reference type transactionId transactionType amount status"
+        )
         .populate("course")
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -52,17 +76,40 @@ const getAllPaymentHistoryUser = async (
   }
 };
 
-const getSinglePaymentHistoryUser = async (
+const getSinglePaymentHistory = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   try {
-    const userId = req.user?.userId;
+    const { customerModel } = req.query;
+
+    let customerId;
+    if (customerModel === "Tutor") {
+      customerId = req.tutor?.tutorId;
+    } else if (customerModel === "Affiliate") {
+      customerId = req.affiliate?.affiliateId;
+    } else if (customerModel === "User") {
+      customerId = req.user?.userId;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid Customer Model",
+      });
+    }
+
+    if (!customerId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: `${customerModel} Id can't be empty`,
+      });
+    }
+
     const { id } = req.params;
 
     const payment = await PaymentHistory.findOne({
       _id: id,
-      user: userId,
+      customer: customerId,
+      customerModel,
     }).populate("course");
 
     if (!payment) {
@@ -86,4 +133,4 @@ const getSinglePaymentHistoryUser = async (
   }
 };
 
-export { getAllPaymentHistoryUser, getSinglePaymentHistoryUser };
+export { getAllPaymentHistory, getSinglePaymentHistory };
