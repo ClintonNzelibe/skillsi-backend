@@ -49,7 +49,7 @@ const getAllPaymentHistory = async (
     const [payments, total] = await Promise.all([
       PaymentHistory.find(filter)
         .select(
-          "customer customerModel course reference type transactionId transactionType amount status"
+          "customer customerModel course reference type transactionId transactionType amount status createdAt"
         )
         .populate("course")
         .sort({ createdAt: -1 })

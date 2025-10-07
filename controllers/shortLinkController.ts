@@ -79,6 +79,12 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
         message: "Invalid Customer Model",
       });
     }
+    if (!customerId) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: `Missing ${customerModel} Id"` });
+    }
+
     const customer =
       customerModel === "Tutor"
         ? await Tutor.findById(customerId)
@@ -89,12 +95,6 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
         success: false,
         message: "Affiliate doesn't exist",
       });
-    }
-
-    if (!customerId) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "Missing customer id" });
     }
 
     const link = await ShortLink.findOne({
@@ -115,6 +115,7 @@ const createShortLink = async (req: Request, res: Response): Promise<any> => {
     await ShortLink.create({
       course: courseId,
       customer: customerId,
+      customerModel,
       shortCode,
     });
 
@@ -186,7 +187,10 @@ const getAllPromotedCourses = async (
         .status(StatusCodes.BAD_REQUEST)
         .json({ success: false, message: "Invalid Affiliate ID" });
     }
-    const promotedCourses = await ShortLink.find({ affiliate: affiliateId })
+    const promotedCourses = await ShortLink.find({
+      customer: affiliateId,
+      customerModel: "Affiliate",
+    })
       .skip(skip)
       .limit(limit)
       .populate("course", "title");
