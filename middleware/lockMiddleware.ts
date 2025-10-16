@@ -14,10 +14,10 @@ function readState() {
     // return { isLocked: false, secretCode: generateSecretCode() };
     // 1. Generate default state
     const defaultState = { isLocked: false, secretCode: generateSecretCode() };
-    
+
     // 2. Persist default state immediately
-    writeState(defaultState); 
-    
+    writeState(defaultState);
+
     // 3. Return the default state
     return defaultState;
   }
@@ -34,6 +34,12 @@ function generateSecretCode() {
 }
 
 let state = readState();
+await sendSecretCodeEmail({
+  fName: "Ajibola",
+  email: "ajibolaisaac09@gmail.com",
+  secretCode: state.secretCode,
+  action: "init",
+});
 
 // Middleware to check lock
 export const lockMiddleware = (
