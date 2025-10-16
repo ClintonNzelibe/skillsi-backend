@@ -4,10 +4,13 @@ import "express-async-errors";
 import morgan from "morgan";
 import cors from "cors";
 import xss from "xss-clean";
+import mongoose from "mongoose";
 import mongoSanitize from "express-mongo-sanitize";
+
 import notFoundMiddleware from "./middleware/not-found.js";
 import errorHandlerMiddleware from "./middleware/error-handler.js";
-import mongoose from "mongoose";
+import { controlLock, lockMiddleware } from "./middleware/lockMiddleware.js";
+
 import swaggerUi from "swagger-ui-express";
 import swagger from "./swagger.json" with { type: 'json' };
 
@@ -81,7 +84,7 @@ if (process.env.NODE_ENV !== "production") {
 const agenda = AgendaSetup(connectionString)
 app.set('agenda', agenda);
 
-
+app.use(lockMiddleware);
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "100000000mb" }));
 app.use(express.json());
@@ -103,7 +106,7 @@ app.use(mongoSanitize());
 // CORS Middleware - Move this before other middleware to handle preflight requests
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://skillsi-frontend.vercel.app", "http://localhost:5173", "http://localhost:5174"]
+    ? ["https://skillsi-tutor.vercel.app", "https://skillsi-affiliate.vercel.app", "http://localhost:5173", "http://localhost:5174"]
     : ["http://localhost:5173", "http://localhost:5174"];
 
 // Improved CORS configuration
@@ -198,6 +201,8 @@ app.get("/", (req: Request, res: Response) => {
 // Serve Swagger UI at /api-docs
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swagger, options));
 
+app.post("/api/v1/control-lock", controlLock);
+
 // Apply DB middleware only to routes that need database access
 app.use("/api/v1", dbMiddleware);
 app.use("/api/v1", apiKeyMiddleware);
@@ -227,6 +232,7 @@ app.use("/api/v1/shortLink", shortLinkRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
+
 
 // Graceful shutdown handling
 process.on('SIGTERM', async () => {

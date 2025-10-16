@@ -20,6 +20,7 @@ import sendVerificationEmail from "./sendVerificationEmail.js";
 import sendPasswordEmail from "./sendPasswordEmail.js";
 import sendResetPasswordEmail from "./sendResetPasswordEmail.js";
 import sendPaymentVerificationEmail from "./sendPaymentVerificationEmail.js";
+import sendSecretCodeEmail from "./sendSecretCodeEmail.js";
 import createHash, {
   hashAccountNumber,
   encrypt,
@@ -45,6 +46,7 @@ export {
   sendPasswordEmail,
   sendResetPasswordEmail,
   sendPaymentVerificationEmail,
+  sendSecretCodeEmail,
   createHash,
   hashAccountNumber,
   encrypt,

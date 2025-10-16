@@ -27,6 +27,8 @@ interface IUser extends Document {
   numberOfEdits?: number;
   lastLoggedIn?: Date;
   loggedInTimes?: number;
+  status?: "pending" | "approved" | "rejected" | "suspended";
+  totalPurchasedCourses?: number;
 
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -124,6 +126,16 @@ const UserSchema: Schema<IUser> = new Schema(
     loggedInTimes: {
       type: Number,
       default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "blocked", "suspended"],
+      default: "approved",
+    },
+    totalPurchasedCourses: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   { timestamps: true }

@@ -1,11 +1,15 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+
+import User from "../models/User.js";
+import PurchasedCourse from "../models/PurchasedCourse.js";
+import PaymentHistory from "../models/PaymentHistory.js";
+
 import {
   UploadFileToCloudinary,
   PasswordValidation,
   TokenGenerator,
 } from "../helpers/index.js";
-import User from "../models/User.js";
 import { createHash, sendResetPasswordEmail } from "../utils/index.js";
 
 const changeProfilePicture = async (
@@ -465,6 +469,157 @@ const resendToken = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const fetchAllUsers = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { search, status = "approved" } = req.query;
+
+    let filter: any = {};
+
+    const andFilters: any[] = [];
+    if (search) {
+      andFilters.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    if (status && typeof status === "string") {
+      andFilters.push({ status });
+    }
+
+    if (andFilters.length > 0) {
+      filter.$and = andFilters;
+    }
+
+    const users = await User.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .select("fullName email profilePicture totalPurchasedCourses");
+
+    if (!users || users.length === 0) {
+      return res.status(StatusCodes.OK).json({
+        success: false,
+        message: "No users found",
+        users: [],
+      });
+    }
+
+    const totalUsersCount = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsersCount / limit);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Users fetched successfully",
+      users,
+      page,
+      totalUserPerPage: users.length,
+      totalPages,
+      totalUsers: totalUsersCount,
+    });
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const fetchSingleUser = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { userId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { tab = "purchasedCourses" } = req.query;
+
+    if (!userId) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "User ID is required" });
+    }
+
+    const user = await User.findById(userId)
+      .select(
+        "fullName email profilePicture status createdAt totalPurchasedCourses"
+      )
+      .lean();
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "User not found" });
+    }
+
+    let data: any[] = [];
+    let totalCounts = 0;
+    let totalPages = 0;
+    let totalCountPerPage = 0;
+
+    if (tab === "purchasedCourses") {
+      totalCounts = await PurchasedCourse.countDocuments({
+        customer: userId,
+      });
+      totalPages = Math.ceil(totalCounts / limit);
+
+      data = await PurchasedCourse.find({ customer: userId })
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .select("customer course overallCompletionPercent")
+        .populate({
+          path: "course",
+          select: "title subTitle description bannerImage numberOfModules numberOfLessons rating totalDuration",
+        })
+        .lean();
+
+      totalCountPerPage = data.length;
+    } else if (tab === "paymentHistory") {
+      totalCounts = await PaymentHistory.countDocuments({
+        customer: userId,
+        customerModel: "User",
+      });
+      totalPages = Math.ceil(totalCounts / limit);
+
+      data = await PaymentHistory.find({
+        customer: userId,
+        customerModel: "User",
+      })
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .select(
+          "paidAt amount status transactionType reference transactionId cardType bank"
+        )
+        .lean();
+
+      totalCountPerPage = data.length;
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "User fetched successfully",
+      user,
+      data,
+      page,
+      totalCountPerPage,
+      totalPages,
+      totalCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching single user:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   changeProfilePicture,
   changePassword,
@@ -476,4 +631,6 @@ export {
   verifyTokenResetPassword,
   resetPassword,
   resendToken,
+  fetchAllUsers,
+  fetchSingleUser,
 };

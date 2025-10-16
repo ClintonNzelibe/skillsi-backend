@@ -1,7 +1,10 @@
 import express from "express";
 const router = express.Router();
 
-import { authenticateUser } from "../middleware/authentication.js";
+import {
+  authenticateUser,
+  authenticateAdmin,
+} from "../middleware/authentication.js";
 
 import {
   changeProfilePicture,
@@ -14,6 +17,8 @@ import {
   verifyTokenResetPassword,
   resetPassword,
   resendToken,
+  fetchAllUsers,
+  fetchSingleUser,
 } from "../controllers/userController.js";
 
 router
@@ -39,5 +44,11 @@ router.route("/verifyTokenResetPassword").post(verifyTokenResetPassword);
 router.route("/resetPassword").patch(resetPassword);
 
 router.route("/resendToken").post(resendToken);
+
+router.route("/fetchAllUsers").get(authenticateAdmin, fetchAllUsers);
+
+router
+  .route("/fetchSingleUser/:userId")
+  .get(authenticateAdmin, fetchSingleUser);
 
 export default router;

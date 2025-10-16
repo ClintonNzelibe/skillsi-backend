@@ -34,7 +34,7 @@ interface ICourse extends Document {
   numberOfModules?: number;
   numberOfLessons?: number;
   totalDuration?: number;
-  approveStatus?: CourseStatus;
+  status?: CourseStatus;
   shortCode?: string;
 }
 
@@ -202,7 +202,7 @@ const CourseSchema: Schema<ICourse> = new Schema(
       type: Number,
       default: 0, // store in seconds or minutes as you prefer
     },
-    approveStatus: {
+    status: {
       type: String,
       enum: ["live", "rejected", "pending"],
       default: "live",
