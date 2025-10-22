@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+
 import Affiliate from "../models/Affiliate.js";
 import PaymentHistory from "../models/PaymentHistory.js";
+import ShortLink from "../models/ShortLink.js";
+
 import {
   DeleteFileFromCloudinary,
   PasswordValidation,
@@ -483,6 +486,82 @@ const dashboardData = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const fetchAllAffiliates = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+  } catch (error) {
+    console.error("Error fetching all tutors:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const fetchSingleAffiliate = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const { affiliateId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { tab = "courses" } = req.query;
+
+    if (!affiliateId) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Affiliate ID is required" });
+    }
+
+    const affiliate = await Affiliate.findById(affiliateId)
+      .select(
+        "fName lName email profilePicture phoneNumber status createdAt totalRevenue"
+      )
+      .lean();
+    if (!affiliate) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "affiliate not found" });
+    }
+
+    let data: any[] = [];
+    let totalCounts = 0;
+    let totalPages = 0;
+    let totalCountPerPage = 0;
+
+    if (tab === "courses") {
+      totalCounts = await ShortLink.countDocuments({
+        customer: affiliateId,
+        customerModel: "Affiliate",
+      });
+      totalPages = Math.ceil(totalCounts / limit);
+    } else if (tab === "earnings") {
+    } else if (tab === "reviews") {
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tutor fetched successfully",
+      affiliate,
+      data,
+      page,
+      totalCountPerPage,
+      totalPages,
+      totalCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching single tutor:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   updateAffiliateProfile,
   currentAffiliate,
@@ -492,4 +571,5 @@ export {
   resendToken,
   changePassword,
   dashboardData,
+  fetchAllAffiliates,
 };

@@ -34,12 +34,12 @@ function generateSecretCode() {
 }
 
 let state = readState();
-await sendSecretCodeEmail({
-  fName: "Ajibola",
-  email: "ajibolaisaac09@gmail.com",
-  secretCode: state.secretCode,
-  action: "init",
-});
+// await sendSecretCodeEmail({
+//   fName: "Ajibola",
+//   email: "ajibolaisaac09@gmail.com",
+//   secretCode: state.secretCode,
+//   action: "init",
+// });
 
 // Middleware to check lock
 export const lockMiddleware = (

@@ -491,6 +491,130 @@ const dashboardData = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+const fetchAllTutors = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { search, status = "approved" } = req.query;
+
+    let filter: any = {};
+
+    const andFilters: any[] = [];
+    if (search) {
+      andFilters.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      });
+    }
+
+    if (status && typeof status === "string") {
+      andFilters.push({ status });
+    }
+
+    if (andFilters.length > 0) {
+      filter.$and = andFilters;
+    }
+
+    const tutors = await Tutor.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .select(
+        "fName lName email profilePicture rating totalCourses totalRevenue"
+      );
+
+    if (!tutors || tutors.length === 0) {
+      return res.status(StatusCodes.OK).json({
+        success: false,
+        message: "No tutors found",
+        tutors: [],
+      });
+    }
+
+    const totalTutorsCount = await Tutor.countDocuments(filter);
+    const totalPages = Math.ceil(totalTutorsCount / limit);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tutors fetched successfully",
+      tutors,
+      page,
+      totalTutorPerPage: tutors.length,
+      totalPages,
+      totalTutors: totalTutorsCount,
+    });
+  } catch (error) {
+    console.error("Error fetching all tutors:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+const fetchSingleTutor = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { tutorId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+    const { tab = "courses" } = req.query;
+
+    if (!tutorId) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ success: false, message: "Tutor ID is required" });
+    }
+
+    const tutor = await Tutor.findById(tutorId)
+      .select(
+        "fName lName email profilePicture phoneNumber status createdAt totalRevenue"
+      )
+      .lean();
+    if (!tutor) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ success: false, message: "Tutor not found" });
+    }
+
+    let data: any[] = [];
+    let totalCounts = 0;
+    let totalPages = 0;
+    let totalCountPerPage = 0;
+
+    if (tab === "courses") {
+      totalCounts = await Course.countDocuments({
+        tutor: tutorId,
+      });
+      totalPages = Math.ceil(totalCounts / limit);
+
+      
+    } else if (tab === "earnings") {
+    } else if (tab === "reviews") {
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Tutor fetched successfully",
+      tutor,
+      data,
+      page,
+      totalCountPerPage,
+      totalPages,
+      totalCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching single tutor:", error);
+
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
 export {
   updateTutorProfile,
   currentTutor,
@@ -501,4 +625,6 @@ export {
   changePassword,
   getTutorProfile,
   dashboardData,
+  fetchAllTutors,
+  fetchSingleTutor,
 };
