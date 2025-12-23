@@ -6,6 +6,8 @@ export interface IAdmin extends Document {
   firstName: string;
   lastName: string;
   userName: string;
+  phoneNumber?: string;
+  profilePicture?: string;
   email: string;
   password: string;
   role: "superadmin" | "admin";
@@ -29,6 +31,21 @@ const AdminSchema = new Schema<IAdmin>(
       type: String,
       required: [true, "Please provide user name"],
       trim: true,
+    },
+    phoneNumber: {
+      type: String,
+      validate: {
+        validator: (str: string) =>
+          str === "" || validator.isMobilePhone(str, "any"),
+        message: "Please provide a valid phone number",
+      },
+      trim: true,
+      default: "",
+    },
+    profilePicture: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultProfilePicture.png",
     },
     email: {
       type: String,
@@ -102,7 +119,10 @@ AdminSchema.pre("save", function (next) {
   if (this.get("role") !== "superadmin") return next();
 
   // Prevent changing from superadmin in save() calls
-  if ((this as any)._originalRole === "superadmin" && this.get("role") !== "superadmin") {
+  if (
+    (this as any)._originalRole === "superadmin" &&
+    this.get("role") !== "superadmin"
+  ) {
     return next(new Error("Cannot change role of a superadmin"));
   }
   next();

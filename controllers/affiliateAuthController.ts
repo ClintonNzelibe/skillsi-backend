@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
-import Affiliate from "../models/Affiliate.js";
 import { StatusCodes } from "http-status-codes";
+
+import Affiliate from "../models/Affiliate.js";
+
 import {
   createHash,
   createTokenAffiliate,
@@ -73,7 +75,9 @@ const signupAffiliate = async (req: Request, res: Response): Promise<any> => {
       email: affiliate.email,
     });
   } catch (error) {
-    console.error("Signup error", error);
+    console.error("Signup affiliate error", error);
+
+
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal Server Error",
@@ -135,7 +139,8 @@ const verifyEmail = async (req: Request, res: Response): Promise<any> => {
       });
     }
   } catch (error) {
-    console.error("Verifying email error", error);
+    console.error("Verifying affiliate email error", error);
+
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Internal Server Error" });
@@ -183,7 +188,8 @@ const resendToken = async (req: Request, res: Response): Promise<any> => {
       message: "Verification Token sent, please kindly check your email",
     });
   } catch (error) {
-    console.error("Resending verification token error", error);
+    console.error("Resending affiliate verification token error", error);
+
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, message: "Internal Server Error" });
@@ -259,7 +265,8 @@ const signinAffiliate = async (req: Request, res: Response): Promise<any> => {
       token,
     });
   } catch (error) {
-    console.error("Signin error", error);
+    console.error("Signin affiliate error", error);
+
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Internal Server Error",

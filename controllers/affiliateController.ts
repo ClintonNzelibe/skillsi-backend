@@ -108,7 +108,7 @@ const currentAffiliate = async (req: Request, res: Response): Promise<any> => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: "Fetched Succesfully",
+      message: "Affiliate Data Fetched Succesfully",
       affiliate: {
         affiliateId: affiliate._id,
         firstName: affiliate.firstName,
