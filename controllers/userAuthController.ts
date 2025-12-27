@@ -244,13 +244,13 @@ const login = async (req: Request, res: Response): Promise<any> => {
       }
 
       // Restrict login if user is already logged in from a different device
-      if (user.isLoggedIn && user.currentDeviceToken !== deviceToken) {
-        return res.status(StatusCodes.FORBIDDEN).json({
-          success: false,
-          message:
-            "You are already logged in on another device. Please logout first.",
-        });
-      }
+      // if (user.isLoggedIn && user.currentDeviceToken !== deviceToken) {
+      //   return res.status(StatusCodes.FORBIDDEN).json({
+      //     success: false,
+      //     message:
+      //       "You are already logged in on another device. Please logout first.",
+      //   });
+      // }
 
       // Update user session
       user.currentDeviceToken = deviceToken;
