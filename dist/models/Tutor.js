@@ -1,0 +1,166 @@
+// models/Tutor.ts
+import mongoose, { Schema } from "mongoose";
+import validator from "validator";
+import bcrypt from "bcryptjs";
+const TutorSchema = new Schema({
+    fName: {
+        type: String,
+        required: [true, "Please provide first name"],
+        trim: true,
+    },
+    lName: {
+        type: String,
+        required: [true, "Please provide last name"],
+        trim: true,
+    },
+    email: {
+        type: String,
+        unique: true,
+        required: [true, "Please provide email address"],
+        validate: {
+            validator: (str) => validator.isEmail(str),
+            message: "Please provide valid email",
+        },
+        trim: true,
+        lowercase: true,
+    },
+    password: {
+        type: String,
+        required: [true, "Please provide password"],
+        validate: {
+            validator: (str) => validator.isStrongPassword(str),
+            message: "Password must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.",
+        },
+        trim: true,
+        select: false,
+        minlength: 12,
+    },
+    location: {
+        type: String,
+        // required: true,
+        default: "",
+        validate: {
+            validator: (str) => str === "" || validator.isLength(str, { min: 20 }),
+            message: "Location must be at least 2 characters long",
+        },
+    },
+    phoneNumber: {
+        type: String,
+        validate: {
+            validator: (str) => str === "" || validator.isMobilePhone(str, "any"),
+            message: "Please provide a valid phone number",
+        },
+        trim: true,
+        default: "",
+    },
+    bio: {
+        type: String,
+        // required: true,
+    },
+    expertise: {
+        type: [String],
+        // required: true,
+    },
+    profilePicture: {
+        type: String,
+        default: "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultProfilePicture.png",
+    },
+    certificateImage: {
+        type: String,
+        default: "https://res.cloudinary.com/dqj8v0x5g/image/upload/v1697060982/DefaultCertificateImage.png",
+    },
+    socialLinks: {
+        youtube: String,
+        linkedin: String,
+        xFormelyTwitter: String,
+        facebook: String,
+    },
+    rating: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalStudents: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalReviews: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalCourses: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    isProfileComplete: {
+        type: Boolean,
+        default: false,
+    },
+    lastLoggedIn: {
+        type: Date,
+    },
+    loggedInTimes: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "approved", "rejected", "suspended"],
+        default: "approved",
+    },
+    balance: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalRevenue: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalWithdrawals: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    pendingWithdrawals: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    totalEnrollments: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    numberOfEdits: { type: Number, default: 0 },
+    verificationToken: { type: String },
+    verificationTokenExpirationDate: { type: Date },
+    verified: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
+    resetToken: {
+        type: String,
+    },
+    isResetTokenVerified: {
+        type: Boolean,
+        default: false,
+    },
+    resetTokenExpirationDate: {
+        type: Date,
+    },
+}, { timestamps: true });
+TutorSchema.pre("save", async function () {
+    if (!this.isModified("password"))
+        return;
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+TutorSchema.methods.comparePassword = async function (canditatePassword) {
+    const isMatch = await bcrypt.compare(canditatePassword, this.password);
+    return isMatch;
+};
+export default mongoose.model("Tutor", TutorSchema);
