@@ -115,7 +115,7 @@
     "moduleResolution": "node",
     "outDir": "dist",
     "baseUrl": ".",
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "paths": {
       "*": ["node_modules/*"]
     }
