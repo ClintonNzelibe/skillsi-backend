@@ -13,6 +13,7 @@ import {
   payWithExistingBankMethod,
 } from "../services/index.js";
 
+console.log("PAYSTACK KEY:", process.env.PAYSTACK_SECRET_KEY);
 const displayCard = (last4: string, bin: string) => {
   return `${bin.slice(0, 4)} **** **** **** ${last4}`;
 };

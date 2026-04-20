@@ -1,6 +1,11 @@
 import { Router } from "express";
 const router = Router();
+console.log("🔥 PAYMENT ROUTES LOADED")
 
+// 👇 ADD THIS RIGHT AFTER router is created
+router.get("/test", (req, res) => {
+  res.send("Payment route works");
+});
 import { authenticateUser } from "../middleware/authentication.js";
 
 import {
@@ -27,6 +32,6 @@ router
 
 router.route("/coursePayment").post(authenticateUser, coursePayment);
 
-router.route("/coursePayment").post(authenticateUser, coursePayment);
+
 
 export default router;

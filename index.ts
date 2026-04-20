@@ -204,7 +204,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swagger, options));
 app.post("/api/v1/control-lock", controlLock);
 
 // Apply DB middleware only to routes that need database access
-app.use("/api/v1", dbMiddleware);
+
 app.use("/api/v1", apiKeyMiddleware);
 
 // Add your API routes here

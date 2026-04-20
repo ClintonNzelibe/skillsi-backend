@@ -26,7 +26,7 @@ interface ICourse extends Document {
   priceInPounds: number;
   tutor: Types.ObjectId;
   allowAffiliate: boolean;
-  affliateCommission: number;
+  affiliateCommission: number;
   allowQuestions?: boolean;
   totalEarnings: number;
   totalAffiliate: number; // Total affiliate-driven enrollments
@@ -157,7 +157,7 @@ const CourseSchema: Schema<ICourse> = new Schema(
       type: Boolean,
       default: false,
     },
-    affliateCommission: {
+    affiliateCommission: {
       type: Number,
       default: 0,
       min: 0,

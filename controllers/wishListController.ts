@@ -33,21 +33,32 @@ const addToWishList = async (req: Request, res: Response): Promise<any> => {
 // Get all Wishlist items
 const getWishList = async (req: Request, res: Response): Promise<any> => {
   try {
+    console.log("🔥 NEW WISHLIST LOGIC RUNNING");
     const userId = req.user?.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = 50;
     const skip = (page - 1) * limit;
     const { search } = req.query;
 
-    const wishlist = await WishList.find({ user: userId }).populate({
-      path: "course",
-      match: search
-        ? {
-            title: { $regex: search as string, $options: "i" },
-            description: { $regex: search as string, $options: "i" },
-          }
-        : {},
-    });
+    const wishlist = await WishList.find({ user: userId })
+      .populate({
+        path: "course",
+        match: search
+          ? {
+              $or: [
+                { title: { $regex: search as string, $options: "i" } },
+                { description: { $regex: search as string, $options: "i" } },
+              ],
+            }
+          : {},
+        select:
+          "title subTitle priceInNaira thumbnail category subcategory tutor",
+        populate: [
+          { path: "category", select: "name" },
+          { path: "subcategory", select: "name" },
+          { path: "tutor", select: "fName lName email" },
+        ],
+      });
 
     // Filter out those without a course match (populate returns null if no match)
     const filteredItems = wishlist.filter(
@@ -60,7 +71,7 @@ const getWishList = async (req: Request, res: Response): Promise<any> => {
     if (paginated.length === 0) {
       return res
         .status(StatusCodes.OK)
-        .json({ success: false, message: "No wishlist found" });
+        .json({ success: true, message: "[]" });
     }
 
     // const total = await WishList.countDocuments({ user: userId });

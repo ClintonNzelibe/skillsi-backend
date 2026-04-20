@@ -12,6 +12,7 @@ import { TokenUser } from "../type.js";
 
 const register = async (req: Request, res: Response): Promise<any> => {
   try {
+    console.log("BODY RECEIVED:", req.body);
     const { fullName, email, password, authProvider, deviceToken } = req.body;
 
     // Validate input

@@ -41,23 +41,29 @@ const createCourse = async (req: Request, res: Response): Promise<any> => {
     } = req.body;
     const tutorId = req.tutor?.tutorId;
 
-    if (
-      !bannerImage ||
-      !title ||
-      !subTitle ||
-      !description ||
-      !objectives ||
-      !requirements ||
-      !targetAudience ||
-      !category ||
-      !subcategory ||
-      !language ||
-      !thumbnail ||
-      !promoVideoUrl
-    ) {
+    const requiredFields = [
+      { field: bannerImage, name: "Banner image" },
+      { field: title, name: "Title" },
+      { field: subTitle, name: "Subtitle" },
+      { field: description, name: "Description" },
+      { field: objectives, name: "Objectives" },
+      { field: requirements, name: "Requirements" },
+      { field: targetAudience, name: "Target audience" },
+      { field: category, name: "Category" },
+      { field: subcategory, name: "Subcategory" },
+      { field: language, name: "Language" },
+      { field: thumbnail, name: "Thumbnail" },
+      { field: promoVideoUrl, name: "Promo video URL" }
+    ];
+
+    const missingFields = requiredFields
+      .filter(item => !item.field || (Array.isArray(item.field) && item.field.length === 0))
+      .map(item => item.name);
+
+    if (missingFields.length > 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: "Please provide all required fields",
+      success: false,
+      message: `Missing required fields: ${missingFields.join(", ")}`
       });
     }
 
@@ -668,6 +674,7 @@ const fetchAllCoursesUser = async (
         "fName lName email profileImage totalStudent totalReviews totalCourses"
       )
       .populate("category", "name description")
+      .populate("subcategory", "name description") 
       .select("-totalEarnings -totalAffiliate");
 
     // const courses = await query;
