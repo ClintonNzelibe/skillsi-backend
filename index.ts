@@ -242,33 +242,20 @@ process.on('SIGTERM', async () => {
 });
 
 const port = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== "production") {
-  // Connect to database first, then start server
-  connectToDatabase(connectionString)
-    .then(() => {
-      app.listen(port, () => {
-        console.log(`Server is listening on port ${port}...`);
-      });
-    })
-    .catch((error) => {
-      console.error("Failed to connect to database:", error);
-      process.exit(1);
+
+// Start server after database connection
+connectToDatabase(connectionString)
+  .then(() => {
+    console.log("Database connected successfully");
+
+    app.listen(port, () => {
+      console.log(`Server is listening on port ${port}`);
     });
-  // app.listen(port, () => {
-  //   console.log(`Server is listening on port ${port}...`);
-  // });
-}else {
-  // Connect to database first, then start server
-  connectToDatabase(connectionString)
-    .then(() => {
-      app.listen(port, () => {
-        console.log(`Server is listening on port ${port}...`);
-      });
-    })
-    .catch((error) => {
-      console.error("Failed to connect to database:", error);
-      process.exit(1);
-    });
-}
+  })
+  .catch((error) => {
+    console.error("Failed to connect to database:", error);
+    process.exit(1);
+  });
+
 
 export default app;

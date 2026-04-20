@@ -1,10 +1,10 @@
 export default {
   service: "gmail",
+  host: "smtp.gmail.com",
   port: 465,
   secure: true,
-  host: "smtp.gmail.com",
   auth: {
-    user: "ajibolaisaac09@gmail.com",
-    pass: "bqsqrsalkmvfnnhj",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 };

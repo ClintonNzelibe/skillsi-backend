@@ -1,17 +1,28 @@
-import nodemailer from 'nodemailer'
-import nodemailerConfig from './nodemailerConfig.js'
+import nodemailer from "nodemailer";
+import nodemailerConfig from "./nodemailerConfig.js";
 
-const sendEmail = async ({ to, subject, html } :any) => {
-  // let testAccount = await nodemailer.createTestAccount()
+type SendEmailParams = {
+  to: string;
+  subject: string;
+  html: string;
+};
 
-  const transporter = nodemailer.createTransport(nodemailerConfig)
+const sendEmail = async ({ to, subject, html }: SendEmailParams) => {
+  try {
+    const transporter = nodemailer.createTransport(nodemailerConfig);
 
-  return transporter.sendMail({
-    from: '"Pyralink_CAMP" <ajibolaisaac09@gmail.com>', // sender address
-    to,
-    subject,
-    html,
-  })
-}
+    const info = await transporter.sendMail({
+      from: `"Pyralink_CAMP" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
 
-export default sendEmail
+    return info;
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw error;
+  }
+};
+
+export default sendEmail;
