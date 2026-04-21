@@ -179,7 +179,7 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.user?.userId;
     const email = req.user?.email;
-    const callback_url = "https://skillsi-backend-8xa6.onrender.com";
+    const callback_url = "https://google.com";
 
     // Always charge ₦100 for tokenization
     const amount = 100;
@@ -382,7 +382,7 @@ const coursePayment = async (req: Request, res: Response): Promise<any> => {
       });
     } else {
       const callback_url =
-        req.headers?.origin || "https://skillsi-backend-8xa6.onrender.com";
+        req.headers?.origin || "https://google.com";
 
       // Always charge ₦100 for tokenization
       const amount = Number(course.priceInNaira);
