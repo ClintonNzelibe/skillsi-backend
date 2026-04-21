@@ -33,7 +33,15 @@ const options = {
 
 const app = express();
 dotenv.config();
-
+app.post(
+  "/api/v1/payment/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    console.log("🔥 RAW WEBHOOK HIT"); // debug log
+    next();
+  },
+  paystackWebhook
+);
 // connect to database
 import connectToDatabase from "./db/connect.js";
 import apiKeyMiddleware from "./middleware/api-key.js";
@@ -69,11 +77,7 @@ import { paystackWebhook } from "./controllers/paymentController.js";
 const connectionString = process.env.MONGO_URL || "";
 
 // Paystack webhook route (must be BEFORE express.json())
-app.post(
-  "/api/v1/payment/webhook",
-  express.raw({ type: "application/json" }),
-  paystackWebhook
-);  
+
 
 // Middleware setup
 if (process.env.NODE_ENV !== "production") {
