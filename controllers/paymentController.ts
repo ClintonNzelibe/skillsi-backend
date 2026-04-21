@@ -191,9 +191,9 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
       amount,
       "card_tokenization",
       "User",
-      "/payment/success",
+      "", // ✅ EMPTY STRING
       {},
-      callback_url
+      "https://google.com" // ✅ TEST URL
     );
 
     res.status(StatusCodes.OK).json({
@@ -394,9 +394,9 @@ const coursePayment = async (req: Request, res: Response): Promise<any> => {
         amount,
         "course_payment",
         "User",
-        "/payment/success",
+        "", // ✅ EMPTY STRING (FIX)
         {},
-        callback_url,
+        "https://google.com", // ✅ TEST URL
         courseId
       );
 
