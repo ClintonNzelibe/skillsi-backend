@@ -11,6 +11,10 @@ const displayCard = (last4, bin) => {
     return `${bin.slice(0, 4)} **** **** **** ${last4}`;
 };
 const paystackWebhook = async (req, res) => {
+    console.log("🔥 WEBHOOK HIT"); // ✅ FIRST LINE
+    console.log("Headers:", req.headers); // ✅ ADD THIS
+    console.log("Raw Body:", req.body); // ✅ ADD THIS
+    console.log(req.body);
     try {
         const secret = PAYSTACK_SECRET_KEY;
         if (!secret) {
@@ -42,7 +46,10 @@ const paystackWebhook = async (req, res) => {
             .createHmac("sha512", secret)
             .update(payload)
             .digest("hex");
+        console.log("Generated hash:", hash);
+        console.log("Paystack signature:", sig);
         if (hash !== sig) {
+            console.log("❌ Invalid signature");
             return res
                 .status(StatusCodes.UNAUTHORIZED)
                 .json({ success: false, message: "Invalid signature" });
@@ -151,11 +158,13 @@ const addPaymentMethod = async (req, res) => {
     try {
         const userId = req.user?.userId;
         const email = req.user?.email;
-        const callback_url = req.headers?.origin || "https://skillsi-tutor.vercel.app";
+        const callback_url = "https://google.com";
         // Always charge ₦100 for tokenization
         const amount = 100;
         // Initialize payment for tokenization
-        const { authorization_url, reference } = await InitializePayment(userId, email, amount, "card_tokenization", "User", "/payment/success", {}, callback_url);
+        const { authorization_url, reference } = await InitializePayment(userId, email, amount, "card_tokenization", "User", "", // ✅ EMPTY STRING
+        {}, "https://google.com" // ✅ TEST URL
+        );
         res.status(StatusCodes.OK).json({
             success: true,
             message: "Payment method added successfully",
@@ -303,11 +312,13 @@ const coursePayment = async (req, res) => {
             });
         }
         else {
-            const callback_url = req.headers?.origin || "https://skillsi-tutor.vercel.app";
+            const callback_url = req.headers?.origin || "https://google.com";
             // Always charge ₦100 for tokenization
             const amount = Number(course.priceInNaira);
             // Initialize payment for tokenization
-            const { authorization_url, reference } = await InitializePayment(userId, email, amount, "course_payment", "User", "/payment/success", {}, callback_url, courseId);
+            const { authorization_url, reference } = await InitializePayment(userId, email, amount, "course_payment", "User", "", // ✅ EMPTY STRING (FIX)
+            {}, "https://google.com", // ✅ TEST URL
+            courseId);
             const courseData = {
                 authorization_url,
                 reference,

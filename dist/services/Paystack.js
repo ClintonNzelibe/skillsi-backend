@@ -17,7 +17,7 @@ export const InitializePayment = async (id, email, amount, purpose, customerMode
     if (!email || !amount || !purpose) {
         throw new Error("Email, amount, and purpose are required");
     }
-    const callback_url = `${callbackUrl || "localhost:5173"}${callbackPath || "/payment/success"}`;
+    const callback_url = callbackUrl || "https://google.com";
     const amountInKobo = amount * 100; // Paystack expects kobo
     // 👇 channels logic
     const channels = purpose === "card_tokenization"

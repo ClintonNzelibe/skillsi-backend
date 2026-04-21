@@ -6,9 +6,8 @@ router.get("/test", (req, res) => {
     res.send("Payment route works");
 });
 import { authenticateUser } from "../middleware/authentication.js";
-import { paystackWebhook, addPaymentMethod, setDefaultPaymentMethod, deletePaymentMethod, getAllPaymentMethods, coursePayment, } from "../controllers/paymentController.js";
+import { addPaymentMethod, setDefaultPaymentMethod, deletePaymentMethod, getAllPaymentMethods, coursePayment, } from "../controllers/paymentController.js";
 // Get all payment methods
-router.route("/webhook").post(paystackWebhook);
 router
     .route("/handlePaymentMethod")
     .post(authenticateUser, addPaymentMethod)

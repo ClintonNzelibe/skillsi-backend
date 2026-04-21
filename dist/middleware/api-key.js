@@ -5,6 +5,9 @@ if (!API_KEY) {
     process.exit(1);
 }
 const apiKeyMiddleware = (req, res, next) => {
+    if (req.originalUrl.startsWith("/api/v1/payment/webhook")) {
+        return next();
+    }
     const apiKey = req.headers["x-api-key"]; // Expect key in headers
     //   console.log("Received:", apiKey);
     //   console.log("Expected:", API_KEY);

@@ -18,7 +18,7 @@ import {
 } from "../controllers/paymentController.js";
 
 // Get all payment methods
-// router.route("/webhook").post(paystackWebhook);
+
 
 router
   .route("/handlePaymentMethod")

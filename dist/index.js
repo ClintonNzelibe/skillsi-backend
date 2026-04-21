@@ -25,6 +25,10 @@ const options = {
 };
 const app = express();
 dotenv.config();
+app.post("/api/v1/paystack/webhook", express.raw({ type: "application/json" }), (req, res, next) => {
+    console.log("🔥 RAW WEBHOOK HIT"); // debug log
+    next();
+}, paystackWebhook);
 // connect to database
 import connectToDatabase from "./db/connect.js";
 import apiKeyMiddleware from "./middleware/api-key.js";
@@ -53,7 +57,6 @@ import shortLinkRouter from "./routes/shortLinkRoutes.js";
 import { paystackWebhook } from "./controllers/paymentController.js";
 const connectionString = process.env.MONGO_URL || "";
 // Paystack webhook route (must be BEFORE express.json())
-app.post("/api/v1/payment/webhook", express.raw({ type: "application/json" }), paystackWebhook);
 // Middleware setup
 if (process.env.NODE_ENV !== "production") {
     app.use(morgan("dev"));
@@ -166,7 +169,13 @@ app.get("/", (req, res) => {
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swagger, options));
 app.post("/api/v1/control-lock", controlLock);
 // Apply DB middleware only to routes that need database access
-app.use("/api/v1", apiKeyMiddleware);
+app.use((req, res, next) => {
+    // ✅ Skip API key for webhook
+    if (req.originalUrl.startsWith("/api/v1/paystack/webhook")) {
+        return next();
+    }
+    return apiKeyMiddleware(req, res, next);
+});
 // Add your API routes here
 app.use("/api/v1/userAuth", userAuthRouter);
 app.use("/api/v1/tutorAuth", tutorAuthRouter);
