@@ -45,14 +45,8 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
     const payload = req.body;
 
     if (!payload) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "Missing payload" });
-    }
-    if (typeof payload === "string" || Buffer.isBuffer(payload) === false) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, message: "Payload must be a Buffer" });
+      console.log("❌ Missing payload");
+      return res.sendStatus(400);
     }
 
     // Verify webhook signature
