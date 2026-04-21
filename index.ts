@@ -205,7 +205,14 @@ app.post("/api/v1/control-lock", controlLock);
 
 // Apply DB middleware only to routes that need database access
 
-app.use("/api/v1", apiKeyMiddleware);
+app.use((req, res, next) => {
+  // ✅ Skip API key for webhook
+  if (req.originalUrl.startsWith("/api/v1/payment/webhook")) {
+    return next();
+  }
+
+  return apiKeyMiddleware(req, res, next);
+});
 
 // Add your API routes here
 app.use("/api/v1/userAuth", userAuthRouter);
