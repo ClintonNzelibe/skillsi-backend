@@ -24,8 +24,8 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
   console.log("Raw Body:", req.body);   // ✅ ADD THIS
   console.log(req.body);
   try {
-    const secret = PAYSTACK_SECRET_KEY;
-
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+      console.log("SECRET:", secret);
     if (!secret) {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,

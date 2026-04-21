@@ -4,7 +4,6 @@ import Course from "../models/Course.js";
 import PurchasedCourse from "../models/PurchasedCourse.js";
 import PaymentHistory from "../models/PaymentHistory.js";
 import crypto from "crypto";
-import { PAYSTACK_SECRET_KEY } from "../utils/index.js";
 import { InitializePayment, PaystackRefund, PaystackVerify, payWithExistingBankMethod, } from "../services/index.js";
 console.log("PAYSTACK KEY:", process.env.PAYSTACK_SECRET_KEY);
 const displayCard = (last4, bin) => {
@@ -16,7 +15,8 @@ const paystackWebhook = async (req, res) => {
     console.log("Raw Body:", req.body); // ✅ ADD THIS
     console.log(req.body);
     try {
-        const secret = PAYSTACK_SECRET_KEY;
+        const secret = process.env.PAYSTACK_SECRET_KEY;
+        console.log("SECRET:", secret);
         if (!secret) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
