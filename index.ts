@@ -34,7 +34,7 @@ const options = {
 const app = express();
 dotenv.config();
 app.post(
-  "/api/v1/payment/webhook",
+  "/api/v1/paystack/webhook",
   express.raw({ type: "application/json" }),
   (req, res, next) => {
     console.log("🔥 RAW WEBHOOK HIT"); // debug log
@@ -211,7 +211,7 @@ app.post("/api/v1/control-lock", controlLock);
 
 app.use((req, res, next) => {
   // ✅ Skip API key for webhook
-  if (req.originalUrl.startsWith("/api/v1/payment/webhook")) {
+  if (req.originalUrl.startsWith("/api/v1/paystack/webhook")) {
     return next();
   }
 
