@@ -382,7 +382,7 @@ const coursePayment = async (req: Request, res: Response): Promise<any> => {
       });
     } else {
       const callback_url =
-        req.headers?.origin || "https://skillsi-tutor.vercel.app";
+        req.headers?.origin || "https://skillsi-backend-8xa6.onrender.com";
 
       // Always charge ₦100 for tokenization
       const amount = Number(course.priceInNaira);

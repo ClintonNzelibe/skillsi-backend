@@ -14,7 +14,7 @@ const apiKeyMiddleware = (
   next: NextFunction
 ): any => {
 
-  if (req.originalUrl.includes("/payment/webhook")) {
+  if (req.originalUrl.startsWith("/api/v1/payment/webhook")) {
     return next();
   }
   const apiKey = req.headers["x-api-key"]; // Expect key in headers
