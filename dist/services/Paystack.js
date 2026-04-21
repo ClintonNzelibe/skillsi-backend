@@ -3,11 +3,11 @@ import PaymentHistory from "../models/PaymentHistory.js";
 import Tutor from "../models/Tutor.js";
 import Affiliate from "../models/Affiliate.js";
 import PendingTransfer from "../models/PendingTransfer.js";
-import { PAYSTACK_SECRET_KEY, createHash } from "../utils/index.js";
+import { createHash } from "../utils/index.js";
 const paystack = axios.create({
     baseURL: "https://api.paystack.co",
     headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
         "Content-Type": "application/json",
         // "User-Agent": "skillsi",
     },
