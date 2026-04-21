@@ -19,6 +19,8 @@ const displayCard = (last4: string, bin: string) => {
 };
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
+  console.log("🔥 WEBHOOK HIT");
+  console.log(req.body);
   try {
     const secret = PAYSTACK_SECRET_KEY;
 
@@ -177,8 +179,7 @@ const addPaymentMethod = async (req: Request, res: Response): Promise<any> => {
   try {
     const userId = req.user?.userId;
     const email = req.user?.email;
-    const callback_url =
-      req.headers?.origin || "https://skillsi-tutor.vercel.app";
+    const callback_url = "https://skillsi-backend-8xa6.onrender.com";
 
     // Always charge ₦100 for tokenization
     const amount = 100;
