@@ -19,7 +19,9 @@ const displayCard = (last4: string, bin: string) => {
 };
 
 const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
-  console.log("🔥 WEBHOOK HIT");
+  console.log("🔥 WEBHOOK HIT"); // ✅ FIRST LINE
+  console.log("Headers:", req.headers); // ✅ ADD THIS
+  console.log("Raw Body:", req.body);   // ✅ ADD THIS
   console.log(req.body);
   try {
     const secret = PAYSTACK_SECRET_KEY;
@@ -58,8 +60,11 @@ const paystackWebhook = async (req: Request, res: Response): Promise<any> => {
       .createHmac("sha512", secret!)
       .update(payload)
       .digest("hex");
+    console.log("Generated hash:", hash);
+    console.log("Paystack signature:", sig);
 
     if (hash !== sig) {
+      console.log("❌ Invalid signature");
       return res
         .status(StatusCodes.UNAUTHORIZED)
         .json({ success: false, message: "Invalid signature" });
